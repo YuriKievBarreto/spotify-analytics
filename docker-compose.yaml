@@ -1,0 +1,37 @@
+services:
+  api:
+    build: .
+    container_name: "api_spotify_analytics"
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - .:/app
+
+    depends_on:
+      - db
+
+    environment:
+      DATABASE_URL: postgresql+asyncpg://yuri:yuri@db:5432/db_spotify_analytics
+      SECRET_KEY: yuri 
+
+
+  db:
+    image: postgres:latest
+    container_name: db_spotify_analytics
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+    environment:
+      POSTGRES_USER: yuri       
+      POSTGRES_PASSWORD: yuri  
+      POSTGRES_DB: db_spotify_analytics
+
+    ports:
+      - "5432:5432"
+
+
+volumes:
+  postgres_data:
+    
