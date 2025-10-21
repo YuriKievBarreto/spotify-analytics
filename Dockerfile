@@ -16,5 +16,5 @@ COPY . /app
 
 EXPOSE 8000
 
-# No Dockerfile:
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+CMD ["/bin/sh", "-c", "poetry run gunicorn --workers 1 --bind 0.0.0.0:8000 --worker-class uvicorn.workers.UvicornWorker app.main:app"]

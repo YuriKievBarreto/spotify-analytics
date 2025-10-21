@@ -4,3 +4,6 @@ venv/
 run_db_setup.py
 to_dataframe.ipynb
 spotipy_teste.py
+__pycache__/
+.cache
+app/__pycache__/
