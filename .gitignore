@@ -32,3 +32,5 @@ log/
 run_db_setup.py
 spotipy_teste.py
 to_dataframe.ipynb
+
+frontend_teste/
