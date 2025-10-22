@@ -1,9 +1,15 @@
+version: '3.8'
+
 services:
   api:
     build: .
     container_name: "api_spotify_analytics"
     ports:
       - "8000:8000"
+    
+   
+    env_file:
+      - .env
 
     volumes:
       - .:/app
@@ -12,39 +18,37 @@ services:
       - db
 
     environment:
-      DATABASE_URL: postgresql+asyncpg://yuri:yuri@db:5432/db_spotify_analytics
-      SECRET_KEY: yuri 
-
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
 
   db:
     image: postgres:latest
     container_name: db_spotify_analytics
-
+    
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
     environment:
-      POSTGRES_USER: yuri       
-      POSTGRES_PASSWORD: yuri  
-      POSTGRES_DB: db_spotify_analytics
+     
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
 
     ports:
       - "5432:5432"
-
 
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin_spotify_analytics
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: yuri@gmail.com 
-      PGADMIN_DEFAULT_PASSWORD: yuri 
+    
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
       - "15432:80" 
     depends_on:
       - db
 
-
 volumes:
   postgres_data:
-    

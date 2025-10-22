@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from models.usuario import Usuario
-from core.database import init_db
+from app.models.usuario import Usuario
+from app.core.database import init_db
 
 
 

@@ -1,0 +1,42 @@
+# Dependências e Ambientes Locais
+####################################
+
+.venv/
+
+# Cache, logs e compilações de Python
+####################################
+
+**/__pycache__/
+
+# Ignora os logs (a menos que sejam essenciais para o container, o que é raro).
+*.log
+.mypy_cache/
+.pytest_cache/
+
+# Arquivos de Sistema e Versionamento
+####################################
+# Arquivo de configuração de versionamento
+.git
+.gitignore
+
+# Configurações de IDEs (para não inflar o contexto de build)
+####################################
+# VS Code
+.vscode/
+
+# PyCharm / IntelliJ
+.idea/
+
+# Arquivos temporários e testes locais
+####################################
+
+.env
+
+# Se você mover estes arquivos para uma pasta 'scripts/' ou 'notebooks/',
+# você pode ignorar a pasta inteira, mas por enquanto:
+spotipy_teste.py
+to_dataframe.ipynb
+
+# O Docker não precisa do seu Docker Compose para construir a imagem da API.
+docker-compose.yaml
+

@@ -6,18 +6,24 @@ from sqlalchemy import text
 class Base(DeclarativeBase):
     pass
 
+# para rodar em conteiner:
+DATABASE_URL = "postgresql+asyncpg://yuri:yuri@db_spotify_analytics:5432/db_spotify_analytics"
 
-DATABASE_URL = "postgresql+asyncpg://yuri:yuri@localhost:5432/db_spotify_analytics"
+
+# para rodar localmente:
+##DATABASE_URL ="postgresql+asyncpg://yuri:yuri@localhost:5432/db_spotify_analytics"
+
+
 
 async_engine = create_async_engine(DATABASE_URL)
 
 
 async def init_db():
     
-    from models.usuario import Usuario 
-    from models.artista import  Artista 
-    from models.faixa import Faixa 
-    from models.relacionamentos import UsuarioTopArtista, UsuarioTopFaixa, GeneroArtista
+    from app.models.usuario import Usuario 
+    from app.models.artista import  Artista 
+    from app.models.faixa import Faixa 
+    from app.models.relacionamentos import UsuarioTopArtista, UsuarioTopFaixa, GeneroArtista
     
     try:
          async with async_engine.begin() as conn:
