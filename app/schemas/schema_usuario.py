@@ -16,8 +16,6 @@ class UsuarioSchema(BaseModel):
 
 
 class UsuarioCreate(BaseModel):
-   class UsuarioCreate(BaseModel):
-   
     id_usuario: str
     nome_exibicao: str
     pais: str

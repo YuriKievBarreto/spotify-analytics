@@ -14,6 +14,6 @@ class Artista(Base):
         back_populates="artista"
     )
 
-    top_usuarios_rel: Mapped[List["UsuarioTopArtista"]] = relationship(
+    generos_rel: Mapped[List["GeneroArtista"]] = relationship(
         back_populates="artista"
     )

@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
   
     await init_db()
     print("aplicação rodando e conectada com o banco de dados")
-    print("rodando em http://localhost:8000")
+    print("rodando em http://localhost:8000/api/v1/auth/login")
 
 
     yield 
@@ -33,11 +33,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[""
-    "   http://localhost:5500",  # Se você usar localhost
-        "http://127.0.0.1:5500",],                      # Permite requisições destas origens
-    allow_credentials=True,                     # Permite cookies de autenticação
-    allow_methods=["*"],                        # Permite todos os métodos (GET, POST, etc.)
-    allow_headers=["*"],                        # Permite todos os cabeçalhos
+    "   http://localhost:5500",  
+        "http://127.0.0.1:5500",],                     
+    allow_credentials=True,
+    allow_methods=["*"],                        
+    allow_headers=["*"],                        
 )
 
 app.include_router(mainRouter)
