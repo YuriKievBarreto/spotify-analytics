@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Request, Depends
-from app.core.spotipy_auth import sp_oauth_manager
+from fastapi import APIRouter, Request, Depends, status, HTTPException, Response
+from app.core.spotipy_auth import sp_oauth_manager  
 from starlette.responses import RedirectResponse
 from spotipy import Spotify
 from fastapi import BackgroundTasks
-from app.services.data_ingestion import process_initial_data
+from app.services.data_ingestion_service import process_initial_data
+from app.core.security import create_access_token
 
 
 auth_router = APIRouter(
@@ -30,14 +31,28 @@ async def spotify_callback(request: Request, background_tasks: BackgroundTasks):
 
         user_id = user_info['id']
 
+        session_token = create_access_token(subject=user_id)
+
+        response = RedirectResponse("http://localhost:3000/frontend_teste/index.html", status_code=status.HTTP_302_FOUND)
 
         background_tasks.add_task(
         process_initial_data, 
         user_id, 
         refresh_token,
         
-    )
+        )
 
-        return RedirectResponse(f"http://127.0.0.1:5500/frontend_teste/dashboard.html?user_id={user_info['id']}")
+        response.set_cookie(
+            key="session_token",                     
+            value=session_token,                  
+            httponly=True,                        
+            #secure=True,                          
+            max_age=43200 * 60,           
+            samesite="Lax"
 
-    return {"message": "Erro na autenticação."}
+        )
+
+
+        return response
+
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro de autenticação")

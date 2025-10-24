@@ -12,6 +12,10 @@ class Usuario(Base):
     nome_exibicao: Mapped[str] = mapped_column(String(50), nullable=False)
     pais: Mapped[str] = mapped_column(String(50), nullable=False)
 
+    access_token: Mapped[str] = mapped_column(String(50), nullable=False)
+    refresh_token: Mapped[str] = mapped_column(String(50))
+    token_expires_at: Mapped[str] = mapped_column(String(50))
+
     top_artistas_rel: Mapped[List["UsuarioTopArtista"]] = relationship(
         back_populates="usuario"
     )
