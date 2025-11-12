@@ -5,6 +5,7 @@ from spotipy import Spotify
 from fastapi import BackgroundTasks
 from app.services.data_ingestion_service import salvar_dados_iniciais_do_usuario
 from app.core.security import create_access_token
+from fastapi.responses import JSONResponse
 
 
 auth_router = APIRouter(
@@ -27,7 +28,7 @@ async def spotify_callback(request: Request, background_tasks: BackgroundTasks):
         await salvar_dados_iniciais_do_usuario(token_info)
         session_token = create_access_token(subject=user_id)
 
-        response = RedirectResponse("http://localhost:5500/frontend_teste/dashboard.html", status_code=status.HTTP_302_FOUND)
+        response = RedirectResponse("/static/dashboard.html", status_code=status.HTTP_302_FOUND)
 
         """
         background_tasks.add_task(
@@ -37,14 +38,18 @@ async def spotify_callback(request: Request, background_tasks: BackgroundTasks):
         
         )
         """
-        response.set_cookie(
-            key="session_token",                     
-            value=session_token,                  
-            httponly=True,                        
-            #secure=True,                          
-            max_age=43200 * 60,           
-            samesite="Lax"
 
+       ## response = JSONResponse({"redirect_url": "http://localhost:5500/frontend_teste/dashboard.html"})
+
+    
+        response.set_cookie(
+            key="session_token",
+            value=session_token,
+            httponly=True,
+            secure=False,  # só porque é localhost
+            samesite="Lax",
+            max_age=43200 * 60,
+            path="/"
         )
 
 
@@ -64,5 +69,12 @@ async def get_user_id(token_info):
 
 
     return user_id
+
+"""
+@auth_router.get("/users/me")
+async def me():
+
+"""
+
 
 

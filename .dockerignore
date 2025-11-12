@@ -36,6 +36,7 @@
 # você pode ignorar a pasta inteira, mas por enquanto:
 spotipy_teste.py
 to_dataframe.ipynb
+ideias_novas.txt
 
 # O Docker não precisa do seu Docker Compose para construir a imagem da API.
 docker-compose.yaml

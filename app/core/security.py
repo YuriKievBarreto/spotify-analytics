@@ -27,13 +27,10 @@ def create_access_token(subject: str | Any,
     to_encode = {"exp": expire, "sub": str(subject)} 
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
-def decode_acess_token(token: str) -> str | None:
+def decode_access_token(token: str) -> str | None:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")

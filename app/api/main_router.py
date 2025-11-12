@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from .auth import auth_router
 from .dashboard import dashboard_router
+from .user import user_router
 
 
 mainRouter = APIRouter(
@@ -10,3 +11,4 @@ mainRouter = APIRouter(
 
 mainRouter.include_router(auth_router)
 mainRouter.include_router(dashboard_router)
+mainRouter.include_router(user_router)
