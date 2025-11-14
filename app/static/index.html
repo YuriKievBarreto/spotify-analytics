@@ -10,13 +10,21 @@
 <body class="bg-gray-950 text-white font-sans">
 
   <!-- Navbar -->
-  <nav class="flex justify-between items-center px-6 py-4 border-b border-gray-800">
-    <div class="flex items-center gap-2">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="logo" class="w-7 h-7">
-      <h1 class="text-xl font-semibold">Spotify Analytics</h1>
-    </div>
-    <a id="btn-entrar" href="#login" class="bg-green-500 hover:bg-green-600 text-black font-medium px-4 py-2 rounded-full transition">Entrar com Spotify</a>
-  </nav>
+  <!-- Navbar -->
+<nav class="flex flex-col md:flex-row justify-between items-center px-6 py-4 border-b border-gray-800">
+  <div class="flex items-center gap-2 mb-2 md:mb-0">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="logo" class="w-7 h-7">
+    <h1 class="text-xl font-semibold">Spotify Analytics</h1>
+  </div>
+  <a 
+    id="btn-entrar" 
+    href="#login" 
+    class="bg-green-500 hover:bg-green-600 text-black font-medium px-4 py-2 rounded-full transition text-center w-full md:w-auto whitespace-nowrap"
+  >
+    Entrar com Spotify
+  </a>
+</nav>
+
 
   <!-- Hero section -->
   <section class="flex flex-col items-center justify-center text-center px-6 py-20 md:py-32">
@@ -30,18 +38,24 @@
 
   <!-- Features section -->
   <section class="grid md:grid-cols-3 gap-10 px-6 md:px-20 py-16 bg-gray-900">
+    
     <div class="bg-gray-800 p-8 rounded-2xl shadow-lg text-center">
       <h3 class="text-xl font-semibold mb-4">🎧 Top Músicas e Artistas</h3>
       <p class="text-gray-400">Veja quais faixas e artistas você mais escuta — por semana, mês ou ano.</p>
     </div>
+
     <div class="bg-gray-800 p-8 rounded-2xl shadow-lg text-center">
       <h3 class="text-xl font-semibold mb-4">📈 Tendências Musicais</h3>
       <p class="text-gray-400">Acompanhe como seu gosto evolui ao longo do tempo e descubra novos estilos.</p>
     </div>
+
     <div class="bg-gray-800 p-8 rounded-2xl shadow-lg text-center">
-      <h3 class="text-xl font-semibold mb-4">🔗 Perfil Compartilhável</h3>
-      <p class="text-gray-400">Gere um resumo visual e compartilhe seu perfil musical com amigos.</p>
+      <h3 class="text-xl font-semibold mb-4">🧠 Emoções & Letras</h3>
+      <p class="text-gray-400">
+        Descubra como as letras das suas músicas refletem suas emoções e hábitos.
+      </p>
     </div>
+
   </section>
 
   <!-- About section -->
@@ -56,7 +70,7 @@
 
   <!-- Footer -->
   <footer class="border-t border-gray-800 text-center py-6 text-gray-500 text-sm">
-    © 2025 Spotify Analytics — Feito com ❤️ por Yuri
+    © 2025 Spotify Analytics —  por Yuri
   </footer>
 
   <script src="/static/script.js"></script>

@@ -11,7 +11,7 @@ CLIENT_ID = os.getenv("SPOTIPY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("SPOTIPY_REDIRECT_URI")
 
-todos_os_escopos = "user-read-private user-read-email user-top-read user-read-recently-played user-read-playback-position user-library-read user-library-modify playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-follow-read user-follow-modify user-read-playback-state user-modify-playback-state user-read-currently-playing streaming app-remote-control ugc-image-upload"
+todos_os_escopos = "user-read-private user-read-email user-top-read user-read-recently-played user-read-playback-position playlist-read-private playlist-read-collaborative user-follow-read user-read-currently-playing"
 
 sp_oauth_manager = SpotifyOAuth(
     client_id=CLIENT_ID,

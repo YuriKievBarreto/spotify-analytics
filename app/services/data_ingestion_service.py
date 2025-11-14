@@ -4,7 +4,6 @@ import spotipy
 import asyncio
 from spotipy import Spotify
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.security import create_access_token
 from app.schemas.schema_usuario import UsuarioCreate
 from datetime import datetime, timedelta, timezone
 from app.services.crud_service import criar_usuario
@@ -16,15 +15,19 @@ async def refresh_and_get_access_token(db: AsyncSession, user_id: str, refresh_t
     )
 
     new_access_token = new_token_info['access_token']
-    access_token=new_token_info['access_token']
+   # access_token=new_token_info['access_token']
     new_refresh_token=new_token_info.get('refresh_token', refresh_token)
     expires_in=new_token_info['expires_in']
 
+    token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
-    ## TO DO
-    # criar logica para salvar o novo token e a nova data de expiracao
 
-    return new_access_token
+
+    return {
+        "new_access_token":new_access_token,
+        "new_refresh_token":new_refresh_token,
+        "new_expires_at":token_expires_at
+    }
      
     
 
@@ -60,26 +63,11 @@ async def salvar_dados_iniciais_do_usuario(token_info):
         )
 
        
-        
-       
-
         user_data_dict = user_create_data.model_dump()
-
-      
-
         db_user = await criar_usuario(db, user_data_dict)
 
         print("ususario criado: ", db_user)
 
-
-        
-
-        
-
-       
-        
-        
-       
-
-
         pass
+
+

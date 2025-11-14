@@ -70,11 +70,6 @@ async def get_user_id(token_info):
 
     return user_id
 
-"""
-@auth_router.get("/users/me")
-async def me():
-
-"""
 
 
 
