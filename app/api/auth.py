@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Request, Depends, status, HTTPException, Response
+from fastapi import APIRouter, Request, Depends, status, HTTPException
 from app.core.spotipy_auth import sp_oauth_manager  
 from starlette.responses import RedirectResponse
 from spotipy import Spotify
 from fastapi import BackgroundTasks
 from app.services.data_ingestion_service import salvar_dados_iniciais_do_usuario, salvar_top_faixas
-from app.core.security import create_access_token
-from fastapi.responses import JSONResponse
+from app.core.security import create_access_token   
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.services.crud_service import ler_usuario
+from app.core.database import get_session
+from app.api.user import valida_credenciais
 
 
 auth_router = APIRouter(
@@ -19,14 +22,25 @@ async def login_spotify():
     return RedirectResponse(auth_url)
 
 @auth_router.get("/callback")
-async def spotify_callback(request: Request, background_tasks: BackgroundTasks):
+async def spotify_callback(request: Request, background_tasks: BackgroundTasks,  db: AsyncSession = Depends(get_session)):
     code = request.query_params.get("code")
     if code:
         token_info = sp_oauth_manager.get_access_token(code)
         user_id = await get_user_id(token_info)
 
-        await salvar_dados_iniciais_do_usuario(token_info)
-        session_token = create_access_token(subject=user_id)
+        validacao_usuario = await ler_usuario(user_id=user_id, db=db)
+
+        if(validacao_usuario == None):
+            print("usuario ainda nao existe")
+            await salvar_dados_iniciais_do_usuario(token_info)
+            session_token = create_access_token(subject=user_id)
+
+        print("por algum motivo o JWT não foi encontrado para o usuario já existente")
+        print("criando novo JWT para o usuário ja existente")
+        session_token = create_access_token(subject=validacao_usuario.id_usuario)
+        print("validando credenciais do usuario")
+        await valida_credenciais(validacao_usuario.id_usuario, db)
+
 
         response = RedirectResponse("/static/dashboard.html", status_code=status.HTTP_302_FOUND)
 

@@ -1,8 +1,4 @@
-from fastapi import APIRouter, Request, Depends
-from app.core.spotipy_auth import sp_oauth_manager
-from starlette.responses import RedirectResponse
-from spotipy import Spotify
-
+from fastapi import APIRouter, Request
 dashboard_router = APIRouter(
     prefix="/dashboard",
     tags=["Dashboard"]

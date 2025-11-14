@@ -7,8 +7,6 @@ from datetime import datetime
 async def criar_usuario(db: AsyncSession, user_data_dict):
 
     print("iniciandi criacao de usuaroi")
-    print("dicionario do usuario: ")
-    print(user_data_dict)
 
 
     try:

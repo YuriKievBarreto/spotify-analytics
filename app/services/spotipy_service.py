@@ -14,7 +14,7 @@ async def autenticar_sp(token_info):
 
 async def get_current_user_details(token_info):
 
-    sp_autenticado =  autenticar_sp(token_info)
+    sp_autenticado =  await autenticar_sp(token_info)
     user_info = sp_autenticado.current_user()
 
     access_token = token_info['access_token']
@@ -75,7 +75,7 @@ async def get_top_faixas(token_info):
         
             final_unified_tracks[track_id][rank_key] = rank_value
 
-        final_unified_tracks
+        print(final_unified_tracks)
 
     return
     
