@@ -43,7 +43,7 @@
       </nav>
 
       <div class="mt-auto">
-        <button class="w-full bg-green-500 hover:bg-green-600 text-black font-semibold py-2 rounded-full mt-10">Sair</button>
+        <button id="logoutButton" class="w-full bg-green-500 hover:bg-green-600 text-black font-semibold py-2 rounded-full mt-10">Sair</button>
       </div>
     </aside>
 
@@ -134,7 +134,45 @@
         }
       }
     });
+
+
+    const logoutButton = document.getElementById("logoutButton");
+    const logoutUrl = "http://127.0.0.1:8000/api/v1/user/logout";
+    const redirectUrl = "http://127.0.0.1:8000/";
+
+    async function handleLogout() {
+        console.log("Tentando realizar logout...");
+
+        try {
+            const response = await fetch(logoutUrl, {
+                method: 'POST',
+                // 🔑 CRUCIAL: Garante que o Cookie 'session_token' (HttpOnly) seja enviado
+                credentials: 'include' 
+            });
+
+            if (response.ok) { // Verifica status 200-299 (Sucesso)
+                console.log("Logout bem-sucedido. Redirecionando.");
+                // Redireciona para a página inicial (que serve o index.html)
+                window.location.href = redirectUrl;
+            } else {
+                // O servidor retornou um erro (ex: 500 ou 401, mesmo que não devesse acontecer no logout)
+                console.error("Logout falhou no servidor:", response.status);
+                alert("Não foi possível encerrar a sessão. Tente novamente.");
+            }
+        } catch (error) {
+            // Erros de rede (servidor offline, CORS, etc.)
+            console.error("Erro de rede durante o logout:", error);
+            alert("Erro de conexão. Verifique sua rede.");
+        }
+    }
+
+    // Anexa a função ao botão APÓS o DOM estar carregado
+    if (logoutButton) {
+        logoutButton.addEventListener("click", handleLogout);
+    }
   </script>
+
+
 
 </body>
 </html>

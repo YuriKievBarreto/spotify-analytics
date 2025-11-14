@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Depends, status
 from app.core.spotipy_auth import sp_oauth_manager
-from starlette.responses import RedirectResponse
+from starlette.responses import Response, JSONResponse
 from spotipy import Spotify
 from app.core.dependencies import get_current_user_id
 from app.services.data_ingestion_service import refresh_and_get_access_token
@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from datetime import datetime, timezone
 
+
+SESSION_TOKEN_COOKIE_NAME = "session_token"
 
 user_router = APIRouter(
     prefix="/user",
@@ -38,5 +40,22 @@ async def me(
 
     return {"message": "logado",
             "detail": "Sessão JWT validada e ativa."}
+
+
+@user_router.post("/logout")
+async def logout(): 
+    response = JSONResponse(content={"message": "Logout bem sucedido"})
+
+    response.set_cookie(
+        key="session_token",
+        httponly=True,
+        secure=False,  # só porque é localhost
+        samesite="Lax",
+        max_age=43200 * 60,
+        path="/"
+    )
+
+    return response
+
 
 
