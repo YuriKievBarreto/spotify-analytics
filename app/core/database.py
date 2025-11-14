@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 
 
 class Base(DeclarativeBase):
@@ -15,7 +15,21 @@ else:
     DATABASE_URL ="postgresql+asyncpg://yuri:yuri@localhost:5432/db_spotify_analytics"
    
     
-
+def get_db_structure(sync_conn):
+    """Executa a inspeção do DB de forma SÍNCRONA."""
+    
+    # 1. O inspect deve ser chamado na conexão síncrona (sync_conn)
+    inspector = inspect(sync_conn)
+    
+    table_names = inspector.get_table_names()
+    db_structure = {}
+    
+    for table_name in table_names:
+        columns = inspector.get_columns(table_name)
+        column_names = [col['name'] for col in columns]
+        db_structure[table_name] = column_names
+        
+    return db_structure
 
 
 
@@ -34,10 +48,25 @@ async def init_db():
          async with async_engine.begin() as conn:
             print("iniciando tentativa de conexao com o banco de dados")
             print("apagando todas as tabelas")
-            ##await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.drop_all)
             print("criando todas as tabelas")
             await conn.run_sync(Base.metadata.create_all)
             print("conexao bem sucedida")
+
+            # ⭐️ 1. EXECUTAR A FUNÇÃO SÍNCRONA (Passando a conexão) ⭐️
+            db_structure = await conn.run_sync(get_db_structure)
+            
+            print("\n--- ESTRUTURA ATUAL DO BANCO DE DADOS ---")
+            
+            # 2. Imprimir os resultados (agora que estão no formato Python)
+            table_count = 0
+            for table_name, column_names in db_structure.items():
+                print(f"[{table_name.upper()}] ({len(column_names)} colunas):")
+                print(f"  -> Colunas: {', '.join(column_names)}")
+                table_count += 1
+                
+            print("-----------------------------------------")
+            print(f"✅ Conexao bem sucedida e {table_count} tabelas verificadas.")
 
             print("query de teste:")
             query = text(
@@ -50,7 +79,9 @@ async def init_db():
             )
 
             result = await conn.execute(query)
+
             table_names = [row[0] for row in result.all()]
+            
 
             print("Conexao bem sucedida e tabelas verificadas/criadas.")
             print("tabelas encontradas: ", len(table_names))

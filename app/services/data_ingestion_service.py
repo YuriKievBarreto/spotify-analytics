@@ -56,7 +56,7 @@ async def salvar_dados_iniciais_do_usuario(token_info):
         user_data_dict = user_create_data.model_dump()
         db_user = await criar_usuario(db, user_data_dict)
 
-        print("ususario criado: ", db_user)
+        
 
         pass
 
@@ -68,6 +68,7 @@ async def salvar_top_faixas(user_id:str, code:str):
             id_usuario=user_id
         )
         """
+        
 
         print("inserindo faixas no bd")
         

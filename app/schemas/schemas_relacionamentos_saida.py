@@ -11,8 +11,9 @@ class UsuarioTopArtistaSchema(BaseModel):
 
 
 class UsuarioTopFaixaSchema(BaseModel):
-    time_range: str
-    rank: int
+    short_time_rank: str
+    medium_time_rank: str
+    long_time_rank: str
 
     class Config:
         from_attributes: True

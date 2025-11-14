@@ -17,9 +17,9 @@ class UsuarioTopFaixaCreate(BaseModel):
    
     id_usuario: str  
     id_faixa: str   
-  
-    time_range: str
-    rank: int
+    short_time_rank: int
+    medium_time_rank: int
+    long_time_rank: int
     
 
 class GeneroArtistaCreate(BaseModel):
