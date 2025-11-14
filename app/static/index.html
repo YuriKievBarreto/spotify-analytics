@@ -1,13 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spotify Analytics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg">
 </head>
-<body>
-    <button id="botao">redirecionar</button>
+<body class="bg-gray-950 text-white font-sans">
 
-    <script src="/static/script.js"></script>
+  <!-- Navbar -->
+  <nav class="flex justify-between items-center px-6 py-4 border-b border-gray-800">
+    <div class="flex items-center gap-2">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="logo" class="w-7 h-7">
+      <h1 class="text-xl font-semibold">Spotify Analytics</h1>
+    </div>
+    <a id="btn-entrar" href="#login" class="bg-green-500 hover:bg-green-600 text-black font-medium px-4 py-2 rounded-full transition">Entrar com Spotify</a>
+  </nav>
+
+  <!-- Hero section -->
+  <section class="flex flex-col items-center justify-center text-center px-6 py-20 md:py-32">
+    <h2 class="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">Descubra o seu <span class="text-green-500">estilo musical</span></h2>
+    <p class="text-gray-300 max-w-2xl mb-8 text-lg md:text-xl">
+      O Spotify Analytics analisa suas músicas, artistas e gêneros mais ouvidos para revelar suas tendências musicais.  
+      Entenda como seus gostos mudam ao longo do tempo e compartilhe seu perfil com amigos.
+    </p>
+    <a id="btn-entrar" href="#login" class="bg-green-500 hover:bg-green-600 text-black font-semibold px-8 py-4 rounded-full text-lg transition">Conectar com Spotify</a>
+  </section>
+
+  <!-- Features section -->
+  <section class="grid md:grid-cols-3 gap-10 px-6 md:px-20 py-16 bg-gray-900">
+    <div class="bg-gray-800 p-8 rounded-2xl shadow-lg text-center">
+      <h3 class="text-xl font-semibold mb-4">🎧 Top Músicas e Artistas</h3>
+      <p class="text-gray-400">Veja quais faixas e artistas você mais escuta — por semana, mês ou ano.</p>
+    </div>
+    <div class="bg-gray-800 p-8 rounded-2xl shadow-lg text-center">
+      <h3 class="text-xl font-semibold mb-4">📈 Tendências Musicais</h3>
+      <p class="text-gray-400">Acompanhe como seu gosto evolui ao longo do tempo e descubra novos estilos.</p>
+    </div>
+    <div class="bg-gray-800 p-8 rounded-2xl shadow-lg text-center">
+      <h3 class="text-xl font-semibold mb-4">🔗 Perfil Compartilhável</h3>
+      <p class="text-gray-400">Gere um resumo visual e compartilhe seu perfil musical com amigos.</p>
+    </div>
+  </section>
+
+  <!-- About section -->
+  <section class="text-center px-6 md:px-20 py-20">
+    <h3 class="text-3xl font-bold mb-6">Como funciona</h3>
+    <p class="text-gray-300 max-w-2xl mx-auto mb-10">
+      Conecte-se com sua conta Spotify, e o Spotify Analytics analisará seus dados públicos — como faixas mais ouvidas, artistas favoritos e gêneros predominantes.  
+      Tudo é feito com segurança e transparência, sem armazenar suas credenciais.
+    </p>
+    <a id="btn-entrar" href="#login" class="bg-green-500 hover:bg-green-600 text-black font-semibold px-6 py-3 rounded-full transition">Entrar com Spotify</a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-800 text-center py-6 text-gray-500 text-sm">
+    © 2025 Spotify Analytics — Feito com ❤️ por Yuri
+  </footer>
+
+  <script src="/static/script.js"></script>
 </body>
 </html>

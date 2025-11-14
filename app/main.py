@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     await init_db()
     print("aplicação rodando e conectada com o banco de dados")
     print("rodando em http://localhost:8000/api/v1/auth/login")
-    print("rodando em http://localhost:8000/")
+    print("rodando em http://127.0.0.1:8000/")
 
 
     yield 
@@ -51,7 +51,7 @@ app.add_middleware(
 app.include_router(mainRouter)
 
 app.mount(
-    "/static", 
+    "/static",
     StaticFiles(directory=Path("app/static")), 
     name="static"
 )

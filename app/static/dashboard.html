@@ -1,11 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spotify Analytics Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg">
 </head>
-<body>
-    <h1>dashboard</h1>
+
+<body class="bg-gray-950 text-white h-screen">
+
+  <!-- Mobile Header -->
+  <header class="w-full bg-gray-900 px-6 py-4 flex items-center justify-between border-b border-gray-800 md:hidden">
+    <div class="flex items-center gap-2">
+      <img 
+        src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" 
+        alt="logo" 
+        class="w-6 h-6"
+      >
+      <h1 class="text-xl font-semibold">Spotify Analytics</h1>
+    </div>
+
+    <button id="mobileMenu" class="text-white text-2xl">☰</button>
+  </header>
+
+  <!-- LAYOUT (Sidebar + Conteúdo) -->
+  <div class="flex h-full">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 flex flex-col p-6 border-r border-gray-800 hidden md:flex">
+      <div class="flex items-center gap-2 mb-10">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="logo" class="w-6 h-6">
+        <h1 class="text-xl font-semibold">Spotify Analytics</h1>
+      </div>
+
+      <nav class="flex flex-col gap-4">
+        <a href="#" class="text-green-500 hover:text-green-500 transition">🎧 Visão Geral</a>
+        <a href="#" class="text-gray-300 hover:text-green-500 transition">📈 Tendências</a>
+        <a href="#" class="text-gray-300 hover:text-green-500 transition">👥 Artistas</a>
+        <a href="#" class="text-gray-300 hover:text-green-500 transition">🎵 Músicas</a>
+      </nav>
+
+      <div class="mt-auto">
+        <button class="w-full bg-green-500 hover:bg-green-600 text-black font-semibold py-2 rounded-full mt-10">Sair</button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 overflow-y-auto p-6 md:p-10">
+
+      <!-- Header -->
+      <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
+        <div>
+          <h2 class="text-3xl font-bold">Olá, Yuri 👋</h2>
+          <p class="text-gray-400">Aqui está um resumo do seu perfil musical</p>
+        </div>
+      </header>
+
+      <!-- Navigation Buttons -->
+      <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+
+        <a href="#" class="bg-green-500 hover:bg-green-600 text-black font-semibold py-6 rounded-2xl shadow-lg flex items-center justify-center transition">
+          👥 Ver Artistas
+        </a>
+
+        <a href="#" class="bg-green-500 hover:bg-green-600 text-black font-semibold py-6 rounded-2xl shadow-lg flex items-center justify-center transition">
+          🎵 Ver Músicas
+        </a>
+
+        <a href="#" class="bg-green-500 hover:bg-green-600 text-black font-semibold py-6 rounded-2xl shadow-lg flex items-center justify-center transition">
+          🎭 Análise de Emoções
+        </a>
+
+      </section>
+
+      <!-- Info + Chart -->
+      <section class="grid lg:grid-cols-3 gap-10">
+
+        <!-- Card: Música mais ouvida recentemente -->
+        <div class="bg-gray-900 p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center text-center">
+          <img src="https://i.scdn.co/image/ab67616d00001e0218d6f80313da2f8d1c727d45" alt="Capa da música" class="w-32 h-32 rounded-xl mb-4">
+          <h3 class="text-lg font-semibold mb-1">Música mais ouvida recentemente</h3>
+          <p class="text-2xl font-bold text-green-500">Zoio de Lula</p>
+          <p class="text-gray-400 mt-1">Charlie Brown Jr</p>
+        </div>
+
+        <!-- Card: Artista mais ouvido recentemente -->
+        <div class="bg-gray-900 p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center text-center">
+          <img src="https://i.scdn.co/image/ab6761610000f1789ff7709f723192b1ef62fcfe" alt="Artista mais ouvido" class="w-32 h-32 rounded-full mb-4">
+          <h3 class="text-lg font-semibold mb-1">Artista mais ouvido recentemente</h3>
+          <p class="text-2xl font-bold text-green-500">Maneva</p>
+          <p class="text-gray-400 mt-1">Gênero: Reggae</p>
+        </div>
+
+        <!-- Gráfico de gêneros -->
+        <div class="bg-gray-900 p-6 rounded-2xl shadow-lg">
+          <h3 class="text-lg font-semibold mb-4">Distribuição de Gêneros</h3>
+          <canvas id="genreChart"></canvas>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div> <!-- fim do layout flex -->
+
+  <script>
+    // Dados fixos (já que não existe mais período)
+    const fixedData = [40, 20, 20, 10, 10];
+
+    // Gráfico de gêneros
+    const ctx2 = document.getElementById('genreChart').getContext('2d');
+    const genreChart = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Pop', 'Hip-hop', 'R&B', 'Rock', 'Eletrônica'],
+        datasets: [{
+          data: fixedData,
+          backgroundColor: ['#22c55e', '#3b82f6', '#a855f7', '#ef4444', '#f59e0b'],
+        }]
+      },
+      options: {
+        plugins: { 
+          legend: { labels: { color: '#fff' } } 
+        }
+      }
+    });
+  </script>
+
 </body>
 </html>

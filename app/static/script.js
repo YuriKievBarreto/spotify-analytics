@@ -1,7 +1,5 @@
-const botao = document.getElementById("botao");
-
 document.addEventListener("click", (e) => {
-  if (e.target.id === "botao") {
+  if (e.target.id === "btn-entrar") {
     fetch('http://127.0.0.1:8000/api/v1/user/me', {
     method: 'GET',
     // ⭐️ Esta linha força o navegador a incluir o Cookie de sessão

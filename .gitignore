@@ -33,4 +33,4 @@ run_db_setup.py
 spotipy_teste.py
 to_dataframe.ipynb
 ideias_novas.txt
-frontend_teste/
+app/static/
