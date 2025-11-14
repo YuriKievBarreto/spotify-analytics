@@ -6,12 +6,17 @@ from sqlalchemy import text
 class Base(DeclarativeBase):
     pass
 
-# para rodar em conteiner:
-##DATABASE_URL = "postgresql+asyncpg://yuri:yuri@db_spotify_analytics:5432/db_spotify_analytics"
+
+rodando_em_conteiner = False
+
+if rodando_em_conteiner:
+    DATABASE_URL = "postgresql+asyncpg://yuri:yuri@db_spotify_analytics:5432/db_spotify_analytics"
+else:
+    DATABASE_URL ="postgresql+asyncpg://yuri:yuri@localhost:5432/db_spotify_analytics"
+   
+    
 
 
-# para rodar localmente:
-DATABASE_URL ="postgresql+asyncpg://yuri:yuri@localhost:5432/db_spotify_analytics"
 
 
 
