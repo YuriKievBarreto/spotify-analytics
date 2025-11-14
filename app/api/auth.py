@@ -3,7 +3,7 @@ from app.core.spotipy_auth import sp_oauth_manager
 from starlette.responses import RedirectResponse
 from spotipy import Spotify
 from fastapi import BackgroundTasks
-from app.services.data_ingestion_service import salvar_dados_iniciais_do_usuario
+from app.services.data_ingestion_service import salvar_dados_iniciais_do_usuario, salvar_top_faixas
 from app.core.security import create_access_token
 from fastapi.responses import JSONResponse
 
@@ -30,17 +30,15 @@ async def spotify_callback(request: Request, background_tasks: BackgroundTasks):
 
         response = RedirectResponse("/static/dashboard.html", status_code=status.HTTP_302_FOUND)
 
-        """
-        background_tasks.add_task(
-        process_initial_data, 
-        user_id, 
-        refresh_token,
         
+        background_tasks.add_task(
+        salvar_top_faixas, 
+        user_id,
+        code
         )
-        """
+        
 
-       ## response = JSONResponse({"redirect_url": "http://localhost:5500/frontend_teste/dashboard.html"})
-
+      
     
         response.set_cookie(
             key="session_token",
