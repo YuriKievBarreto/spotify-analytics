@@ -1,13 +1,10 @@
 from app.core.spotipy_auth import sp_oauth_manager
 from spotipy import Spotify
 from datetime import datetime, timezone, timedelta
+from collections import Counter
 
-async def autenticar_sp(token_info):
-    access_token = token_info['access_token']
-    sp_autenticado = Spotify(auth=access_token)
-
-    
-    return sp_autenticado
+async def autenticar_sp(access_token):
+    return Spotify(auth=access_token)
 
 
 
@@ -38,17 +35,17 @@ async def get_current_user_details(token_info):
 
 
 
-async def get_top_faixas(token_info):
-    sp = autenticar_sp(token_info)
+async def get_top_faixas(access_token: str, quantitade: int = 20):
+    sp = await autenticar_sp(access_token)
 
-    TIME_RANGES = ["short_term", "medium_term", "long_term"]
+    TIME_RANGES = ["short_term"] # "medium_term", "long_term"
 
     final_unified_tracks = {} 
 
     for term in TIME_RANGES:
         
     
-        resultados = sp.current_user_top_tracks(time_range=term)
+        resultados =  sp.current_user_top_tracks(time_range=term, limit=quantitade)
         
         rank_key = f"{term}_rank" 
         
@@ -64,6 +61,8 @@ async def get_top_faixas(token_info):
                 track_data = {
                     "id_faixa": track_id,
                     "nome_faixa": item["name"],
+                    "link_imagem": item["album"]["images"][1]["url"],
+                    "artista_principal": item["artists"][0]["name"]
                 }
                 
                 
@@ -75,7 +74,70 @@ async def get_top_faixas(token_info):
         
             final_unified_tracks[track_id][rank_key] = rank_value
 
-        print(final_unified_tracks)
+    return final_unified_tracks
 
-    return
+    
+    
+
+
+async def get_top_artistas(access_token: str, quantitade: int = 20):
+    sp = await autenticar_sp(access_token)
+
+    TIME_RANGES = ["short_term"] #"medium_term", "long_term"
+
+    final_unified_artists = {} 
+
+    for term in TIME_RANGES:
+        
+    
+        resultados =  sp.current_user_top_artists(time_range=term, limit=quantitade)
+        
+        rank_key = f"{term}_rank" 
+        
+    
+        for rank_index, item in enumerate(resultados.get("items", [])):
+            artist_id = item["id"]
+            rank_value = rank_index + 1
+            
+            
+            if artist_id not in final_unified_artists:
+                
+            
+                track_data = {
+                    "id_artista": artist_id,
+                    "nome_artista": item["name"],
+                    "link_imagem": item["images"][1]["url"],
+                    "generos_artista": item["genres"]
+                }
+                
+                
+                for other_term in TIME_RANGES:
+                    track_data[f"{other_term}_rank"] = None
+                    
+                final_unified_artists[artist_id] = track_data
+            
+        
+            final_unified_artists[artist_id][rank_key] = rank_value
+
+        
+
+    return final_unified_artists
+
+
+
+async def get_user_top_genres(access_token: str, quantidade: int = 50):
+    sp = await autenticar_sp(access_token)
+
+    lista_generos = []
+    artistas = sp.current_user_top_artists(limit=quantidade, time_range="short_term")
+    for artista in artistas["items"]:
+        for genero in artista["genres"]:
+         lista_generos.append(genero)
+
+
+    contagem = Counter(lista_generos)
+    dict_contagem  = dict(contagem.most_common()[:6])
+
+    return dict_contagem
+
     

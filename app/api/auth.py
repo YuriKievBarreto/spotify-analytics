@@ -16,6 +16,7 @@ auth_router = APIRouter(
     tags=["Autenticação"]
 )
 
+
 @auth_router.get("/login")
 async def login_spotify():
     auth_url = sp_oauth_manager.get_authorize_url()
@@ -34,6 +35,12 @@ async def spotify_callback(request: Request, background_tasks: BackgroundTasks, 
             print("usuario ainda nao existe")
             await salvar_dados_iniciais_do_usuario(token_info)
             session_token = create_access_token(subject=user_id)
+            background_tasks.add_task(
+                salvar_top_faixas, 
+                user_id,
+                code
+            )
+        
 
         print("por algum motivo o JWT não foi encontrado para o usuario já existente")
         print("criando novo JWT para o usuário ja existente")
@@ -44,15 +51,6 @@ async def spotify_callback(request: Request, background_tasks: BackgroundTasks, 
 
         response = RedirectResponse("/static/dashboard.html", status_code=status.HTTP_302_FOUND)
 
-        
-        background_tasks.add_task(
-        salvar_top_faixas, 
-        user_id,
-        code
-        )
-        
-
-      
     
         response.set_cookie(
             key="session_token",

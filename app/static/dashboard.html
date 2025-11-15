@@ -11,6 +11,12 @@
 
 <body class="bg-gray-950 text-white h-screen">
 
+  <!-- ==================== LOADING OVERLAY ==================== -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center gap-4 z-50">
+    <div class="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+    <p class="text-gray-300 text-lg">Carregando seu perfil musical...</p>
+  </div>
+
   <!-- Mobile Header -->
   <header class="w-full bg-gray-900 px-6 py-4 flex items-center justify-between border-b border-gray-800 md:hidden">
     <div class="flex items-center gap-2">
@@ -70,15 +76,11 @@
         </a>
 
         <a href="#" class="relative bg-green-500 hover:bg-green-600 text-black font-semibold py-6 rounded-2xl shadow-lg flex flex-col items-center justify-center transition">
-
-  🎭 Análise de Emoções
-
-  <!-- Badge AI Powered -->
-  <span class="absolute -top-2 -right-2 bg-yellow-400 text-black px-2 py-1 text-xs font-bold rounded-full shadow-md ">
-    ⚡ AI Powered
-  </span>
-
-</a>
+          🎭 Análise de Emoções
+          <span class="absolute -top-2 -right-2 bg-yellow-400 text-black px-2 py-1 text-xs font-bold rounded-full shadow-md ">
+            ⚡ AI Powered
+          </span>
+        </a>
 
       </section>
 
@@ -87,18 +89,18 @@
 
         <!-- Card: Música mais ouvida recentemente -->
         <div class="bg-gray-900 p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center text-center">
-          <img src="https://i.scdn.co/image/ab67616d00001e0218d6f80313da2f8d1c727d45" alt="Capa da música" class="w-32 h-32 rounded-xl mb-4">
+          <img id="topTrackImg" src="" class="w-32 h-32 rounded-xl mb-4">
           <h3 class="text-lg font-semibold mb-1">Música mais ouvida recentemente</h3>
-          <p class="text-2xl font-bold text-green-500">Zoio de Lula</p>
-          <p class="text-gray-400 mt-1">Charlie Brown Jr</p>
+          <p id="topTrackName" class="text-2xl font-bold text-green-500"></p>
+          <p id="topArtistName" class="text-gray-400 mt-1"></p>
         </div>
 
         <!-- Card: Artista mais ouvido recentemente -->
         <div class="bg-gray-900 p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center text-center">
-          <img src="https://i.scdn.co/image/ab6761610000f1789ff7709f723192b1ef62fcfe" alt="Artista mais ouvido" class="w-32 h-32 rounded-full mb-4">
+          <img id="topArtistImg" src="" class="w-32 h-32 rounded-full mb-4">
           <h3 class="text-lg font-semibold mb-1">Artista mais ouvido recentemente</h3>
-          <p class="text-2xl font-bold text-green-500">Maneva</p>
-          <p class="text-gray-400 mt-1">Gênero: Reggae</p>
+          <p id="topTrackArtist" class="text-2xl font-bold text-green-500"></p>
+          <p id="topArtistGenre" class="text-gray-400 mt-1"></p>
         </div>
 
         <!-- Gráfico de gêneros -->
@@ -114,18 +116,15 @@
   </div> <!-- fim do layout flex -->
 
   <script>
-    // Dados fixos (já que não existe mais período)
-    const fixedData = [40, 20, 20, 10, 10];
-
-    // Gráfico de gêneros
+    // Gráfico vazio (será preenchido depois)
     const ctx2 = document.getElementById('genreChart').getContext('2d');
     const genreChart = new Chart(ctx2, {
       type: 'doughnut',
       data: {
-        labels: ['Pop', 'Hip-hop', 'R&B', 'Rock', 'Eletrônica'],
+        labels: [],
         datasets: [{
-          data: fixedData,
-          backgroundColor: ['#22c55e', '#3b82f6', '#a855f7', '#ef4444', '#f59e0b'],
+          data: [],
+          backgroundColor: ['#22c55e', '#3b82f6', '#a855f7', '#ef4444', '#f59e0b', '#14b8a6', '#9333ea']
         }]
       },
       options: {
@@ -135,44 +134,90 @@
       }
     });
 
-
+    // Logout
     const logoutButton = document.getElementById("logoutButton");
     const logoutUrl = "http://127.0.0.1:8000/api/v1/user/logout";
     const redirectUrl = "http://127.0.0.1:8000/";
 
     async function handleLogout() {
-        console.log("Tentando realizar logout...");
+      try {
+        const response = await fetch(logoutUrl, { method: 'POST', credentials: 'include' });
 
-        try {
-            const response = await fetch(logoutUrl, {
-                method: 'POST',
-                // 🔑 CRUCIAL: Garante que o Cookie 'session_token' (HttpOnly) seja enviado
-                credentials: 'include' 
-            });
-
-            if (response.ok) { // Verifica status 200-299 (Sucesso)
-                console.log("Logout bem-sucedido. Redirecionando.");
-                // Redireciona para a página inicial (que serve o index.html)
-                window.location.href = redirectUrl;
-            } else {
-                // O servidor retornou um erro (ex: 500 ou 401, mesmo que não devesse acontecer no logout)
-                console.error("Logout falhou no servidor:", response.status);
-                alert("Não foi possível encerrar a sessão. Tente novamente.");
-            }
-        } catch (error) {
-            // Erros de rede (servidor offline, CORS, etc.)
-            console.error("Erro de rede durante o logout:", error);
-            alert("Erro de conexão. Verifique sua rede.");
+        if (response.ok) {
+          window.location.href = redirectUrl;
+        } else {
+          alert("Não foi possível encerrar a sessão.");
         }
+      } catch (error) {
+        alert("Erro de conexão.");
+      }
     }
 
-    // Anexa a função ao botão APÓS o DOM estar carregado
     if (logoutButton) {
-        logoutButton.addEventListener("click", handleLogout);
+      logoutButton.addEventListener("click", handleLogout);
     }
+
+    // ================== CARREGAR DADOS DO USUÁRIO ==================
+    (async () => {
+      const url = "http://127.0.0.1:8000/api/v1/user/get_user_basic_data";
+
+      const loading = document.getElementById("loadingOverlay");
+      loading.classList.remove("hidden"); // mostra loading
+
+      try {
+        const response = await fetch(url, { method: "GET", credentials: "include" });
+
+        if (!response.ok) {
+          loading.querySelector("p").textContent = "Erro ao carregar dados.";
+          return;
+        }
+
+        const data = await response.json();
+
+        // ===== Música =====
+        const topTrack = Object.values(data.top_faixas)[0];
+        document.getElementById("topTrackImg").src = topTrack.link_imagem;
+        document.getElementById("topTrackName").textContent = topTrack.nome_faixa;
+
+        const topArtistForTrack = Object.values(data.top_artistas)[0];
+        document.getElementById("topTrackArtist").textContent = topArtistForTrack.nome_artista;
+
+        // ===== Artista =====
+        const topArtist = Object.values(data.top_artistas)[0];
+        document.getElementById("topArtistImg").src = topArtist.link_imagem;
+        document.getElementById("topArtistName").textContent =Object.entries(data.top_faixas)[0][1].artista_principal;
+        document.getElementById("topArtistGenre").textContent = "Gênero: " + topArtist.generos_artista[0];
+
+        
+        console.log("nome: ", Object.entries(data.top_faixas)[0][1].artista_principal)
+        console.log( "imagem: ", (Object.entries(data.top_faixas)[0][1].link_imagem))
+
+        // ===== Gêneros =====
+      // ===== Gêneros (apenas TOP 4) =====
+let generos = Object.entries(data.top_generos);
+
+// Ordena por quantidade (desc) e pega só os 4 maiores
+generos = generos
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 4);
+
+const labels = generos.map(g => g[0]);
+const values = generos.map(g => g[1]);
+
+genreChart.data.labels = labels;
+genreChart.data.datasets[0].data = values;
+genreChart.update();
+
+
+      } catch (error) {
+        loading.querySelector("p").textContent = "Falha na conexão.";
+        console.log(error)
+        return;
+      }
+
+      loading.classList.add("hidden"); // esconde loading
+    })();
   </script>
-
-
 
 </body>
 </html>

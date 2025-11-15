@@ -52,6 +52,7 @@ async def atualizar_credenciais_usuario(db: AsyncSession,
     except Exception as e:
         print("erro ao atualizar credenciais do usuario: ", e)
         raise e
+    
 
 async def ler_usuario(user_id:str, db: AsyncSession):
     try:

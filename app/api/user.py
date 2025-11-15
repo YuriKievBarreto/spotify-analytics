@@ -7,7 +7,8 @@ from app.services.crud_service import atualizar_credenciais_usuario, ler_usuario
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from datetime import datetime, timezone
-
+from app.services.crud_service import ler_usuario
+from app.services.spotipy_service import get_top_faixas, get_top_artistas, get_user_top_genres
 
 SESSION_TOKEN_COOKIE_NAME = "session_token"
 
@@ -22,8 +23,6 @@ async def me(
      db: AsyncSession = Depends(get_session)
 ):  
     await valida_credenciais(spotify_user_id, db)
-    
-    
 
     return {"message": "logado",
             "detail": "Sessão JWT validada e ativa."}
@@ -44,6 +43,30 @@ async def logout():
 
     return response
 
+@user_router.get("/current_session_user_id")
+async def get_user_id(
+    spotify_user_id: str = Depends(get_current_user_id),
+     db: AsyncSession = Depends(get_session)):
+    
+    return spotify_user_id
+
+
+@user_router.get("/get_user_basic_data")
+async def get_user_basic_data(spotify_user_id: str = Depends(get_current_user_id),
+     db: AsyncSession = Depends(get_session)):
+
+    usuario = await ler_usuario(spotify_user_id, db)
+    nome_exibicao = usuario.nome_exibicao
+    top_faixas = await get_top_faixas(usuario.access_token, quantitade=1)
+    top_artistas = await get_top_artistas(usuario.access_token, quantitade=1)
+    top_generos = await get_user_top_genres(usuario.access_token, quantidade=50)
+
+    return {
+        "nome_exibicao": nome_exibicao,
+        "top_faixas": top_faixas,
+        "top_artistas": top_artistas,
+        "top_generos": top_generos
+    }
 
 
 
