@@ -33,4 +33,7 @@ run_db_setup.py
 spotipy_teste.py
 to_dataframe.ipynb
 ideias_novas.txt
-app/static/
+static/
+extracao_letras.ipynb
+extracao_letras.py
+extracaoo_emocoes.py

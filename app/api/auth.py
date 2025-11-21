@@ -23,49 +23,62 @@ async def login_spotify():
     return RedirectResponse(auth_url)
 
 @auth_router.get("/callback")
-async def spotify_callback(request: Request, background_tasks: BackgroundTasks,  db: AsyncSession = Depends(get_session)):
+async def spotify_callback(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_session)
+):
     code = request.query_params.get("code")
-    if code:
-        token_info = sp_oauth_manager.get_access_token(code)
-        user_id = await get_user_id(token_info)
+    if not code:
+        raise HTTPException(status_code=400, detail="Código de autorização ausente")
 
-        validacao_usuario = await ler_usuario(user_id=user_id, db=db)
+   
+    token_info = sp_oauth_manager.get_access_token(code)
+    user_id = await get_user_id(token_info)
 
-        if(validacao_usuario == None):
-            print("usuario ainda nao existe")
-            await salvar_dados_iniciais_do_usuario(token_info)
-            session_token = create_access_token(subject=user_id)
-            background_tasks.add_task(
-                salvar_top_faixas, 
-                user_id,
-                code
-            )
+  
+    usuario_bd = await ler_usuario(user_id=user_id, db=db)
+
+    if usuario_bd is None:
+        print("Usuário novo — criando dados iniciais...")
         
+        await salvar_dados_iniciais_do_usuario(token_info)
 
-        print("por algum motivo o JWT não foi encontrado para o usuario já existente")
-        print("criando novo JWT para o usuário ja existente")
-        session_token = create_access_token(subject=validacao_usuario.id_usuario)
-        print("validando credenciais do usuario")
-        await valida_credenciais(validacao_usuario.id_usuario, db)
+        session_token = create_access_token(subject=user_id)
 
-
-        response = RedirectResponse("/static/dashboard.html", status_code=status.HTTP_302_FOUND)
-
-    
-        response.set_cookie(
-            key="session_token",
-            value=session_token,
-            httponly=True,
-            secure=False,  # só porque é localhost
-            samesite="Lax",
-            max_age=43200 * 60,
-            path="/"
+        # salva top faixas de forma assíncrona
+        background_tasks.add_task(
+            salvar_top_faixas,
+            user_id,
+            code
         )
 
+    
+    else:
+        print("Usuário já existe — gerando novo JWT")
+        session_token = create_access_token(subject=usuario_bd.id_usuario)
 
-        return response
+        print("Validando credenciais do usuário...")
+        await valida_credenciais(usuario_bd.id_usuario, db)
 
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro de autenticação")
+  
+    response = RedirectResponse(
+        "http://127.0.0.1:8000/static/dashboard.html",
+        status_code=status.HTTP_302_FOUND
+    )
+
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=False,  # Localhost
+        samesite="Lax",
+        max_age=43200 * 60,
+        path="/"
+    )
+
+    return response
+
 
 
 

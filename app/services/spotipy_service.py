@@ -62,8 +62,13 @@ async def get_top_faixas(access_token: str, quantitade: int = 20):
                     "id_faixa": track_id,
                     "nome_faixa": item["name"],
                     "link_imagem": item["album"]["images"][1]["url"],
-                    "artista_principal": item["artists"][0]["name"]
+                    "artista_principal": item["artists"][0]["name"],
+                    "popularidade_faixa": item["popularity"],
+                    "duracao_ms": item["duration_ms"],
+                    "album": item["album"]
                 }
+
+               
                 
                 
                 for other_term in TIME_RANGES:
@@ -107,7 +112,8 @@ async def get_top_artistas(access_token: str, quantitade: int = 20):
                     "id_artista": artist_id,
                     "nome_artista": item["name"],
                     "link_imagem": item["images"][1]["url"],
-                    "generos_artista": item["genres"]
+                    "generos_artista": item["genres"],
+                    "popularidade_artista": item["popularity"]
                 }
                 
                 
