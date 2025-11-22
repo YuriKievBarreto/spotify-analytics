@@ -1,5 +1,7 @@
 
 import sys
+import asyncio
+from functools import partial
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
@@ -7,7 +9,7 @@ from app.core.aws_config import aws_bedrock_client
 
 
 
-def extrair_emocoes(letra_musica: str):
+async def extrair_emocoes(letra_musica: str):
         
     prompt =  f"""
         Você é um analisador emocional especializado. 
@@ -46,13 +48,18 @@ def extrair_emocoes(letra_musica: str):
 
     """
 
-    response = aws_bedrock_client.converse(
+    call = partial(
+        aws_bedrock_client.converse,
         modelId="amazon.nova-lite-v1:0",
-        messages=[
-            {"role": "user", "content": [{"text": prompt}]}
-        ]
+        messages=[{"role": "user", "content": [{"text": prompt}]}]
     )
 
+
+    try:
+        response = await asyncio.to_thread(call)
+    except Exception as e:
+        print(f"Erro ao chamar Bedrock: {e}")
+        return {"erro": str(e)}
     
     raw_output = response["output"]["message"]["content"][0]["text"]
     raw_output = raw_output.replace("```json", "").replace("```", "").strip()
@@ -67,5 +74,17 @@ def extrair_emocoes(letra_musica: str):
         print("conteúdo retornado pelo Bedrock:")
         print(raw_output)
     return None
+
+
+async def extrair_emocoes_em_batch(lista_de_letras: list[str]) -> list[dict]:
+
+    tasks = [
+        extrair_emocoes(letra)
+        for letra in lista_de_letras
+    ]
+
+    resultados = await asyncio.gather(*tasks)
+    
+    return resultados
 
 

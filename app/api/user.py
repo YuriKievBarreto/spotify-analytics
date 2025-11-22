@@ -3,11 +3,11 @@ from app.core.spotipy_auth import sp_oauth_manager
 from starlette.responses import  JSONResponse
 from app.core.dependencies import get_current_user_id
 from app.services.data_ingestion_service import refresh_and_get_access_token
-from app.services.crud_service import atualizar_credenciais_usuario, ler_usuario
+from app.services.crud.user_crud import atualizar_credenciais_usuario, ler_usuario
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from datetime import datetime, timezone
-from app.services.crud_service import ler_usuario
+from app.services.crud.user_crud import ler_usuario
 from app.services.spotipy_service import get_top_faixas, get_top_artistas, get_user_top_genres
 
 SESSION_TOKEN_COOKIE_NAME = "session_token"

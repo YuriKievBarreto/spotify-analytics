@@ -13,7 +13,8 @@ class Faixa(Base):
     emocoes: Mapped[str] = mapped_column(JSON, nullable= True)
     duracao_ms: Mapped[int] = mapped_column(Integer, nullable=False)
     popularidade: Mapped[int] =  mapped_column(Integer, nullable=False)
-    album: Mapped[str] = mapped_column(JSON, nullable= False)
+    album: Mapped[str] = mapped_column(String(255), nullable= False)
+    link_imagem: Mapped[str] = mapped_column(String(255), nullable=False)
 
     top_usuarios_rel: Mapped[List["UsuarioTopFaixa"]] = relationship(
         back_populates="faixa"

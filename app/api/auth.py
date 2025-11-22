@@ -6,9 +6,10 @@ from fastapi import BackgroundTasks
 from app.services.data_ingestion_service import salvar_dados_iniciais_do_usuario, salvar_top_faixas
 from app.core.security import create_access_token   
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.services.crud_service import ler_usuario
+from app.services.crud.user_crud import ler_usuario
 from app.core.database import get_session
 from app.api.user import valida_credenciais
+import asyncio
 
 
 auth_router = APIRouter(
@@ -35,6 +36,13 @@ async def spotify_callback(
    
     token_info = sp_oauth_manager.get_access_token(code)
     user_id = await get_user_id(token_info)
+    access_token = token_info["access_token"]
+    print("--------------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------")
+    print("tokende acesso: ", access_token)
+    print("--------------------------------------------------------------------------")
+    print("--------------------------------------------------------------------------")
+   
 
   
     usuario_bd = await ler_usuario(user_id=user_id, db=db)
@@ -50,7 +58,7 @@ async def spotify_callback(
         background_tasks.add_task(
             salvar_top_faixas,
             user_id,
-            code
+            access_token
         )
 
     
@@ -84,15 +92,14 @@ async def spotify_callback(
 
 async def get_user_id(token_info):
     access_token = token_info['access_token']
-    refresh_token = token_info.get('refresh_token')
+    def _get_id_sync():
+        sp = Spotify(auth=access_token)
+        return sp.current_user()['id']
 
-    sp_autenticado = Spotify(auth=access_token)
-    user_info = sp_autenticado.current_user()
-    user_id = user_info['id']
-
-
+   
+    user_id = await asyncio.to_thread(_get_id_sync)
+    
     return user_id
-
 
 
 

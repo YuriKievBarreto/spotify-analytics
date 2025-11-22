@@ -3,12 +3,17 @@ from app.core.spotipy_auth import sp_oauth_manager
 import spotipy
 import asyncio
 from spotipy import Spotify
+from app.services.spotipy_service import get_top_faixas
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.schema_usuario import UsuarioCreate
 from app.schemas.schema_relacionamentos_entrada import UsuarioTopFaixaCreate
 from datetime import datetime, timedelta, timezone
-from app.services.crud_service import criar_usuario
+from app.services.crud.user_crud import criar_usuario
+from app.services.crud.faixa_crud import salvar_faixas_em_batch
 from app.services.spotipy_service import get_current_user_details
+from app.services.extracao_de_letras import buscar_letras_em_batch
+from app.services.emotion_extraction_service import extrair_emocoes_em_batch
+
 
 
 async def refresh_and_get_access_token(db: AsyncSession, user_id: str, refresh_token: str) -> str:
@@ -60,15 +65,82 @@ async def salvar_dados_iniciais_do_usuario(token_info):
 
         pass
 
-async def salvar_top_faixas(user_id:str, code:str):
+async def salvar_top_faixas(user_id:str, access_token:str):
+    print("iniciando salvamento de top faixas do usuario no bancon de dados")
 
     async with AsyncSession(async_engine) as db:
-        """
-        top_faixa_data = UsuarioTopFaixaCreate(
-            id_usuario=user_id
-        )
-        """
+        ## 1. Obter as 25 top faixas do usuario
+        print("puxando top 25 faixas do short term")
+        top_faixas = await get_top_faixas(access_token, quantitade=5, time_ranges=["short_term", "medium_term", "long_term"])
         
+        top_faixas_unicas = {}
+        tuplas_vistas = set()
+
+        for id_faixa, faixa_dados in top_faixas.items():
+            chave_de_unicidade = (faixa_dados["artista_principal"], faixa_dados["nome_faixa"])
+    
+            if chave_de_unicidade not in tuplas_vistas:
+                tuplas_vistas.add(chave_de_unicidade)
+                top_faixas_unicas[id_faixa] = faixa_dados
+
+        
+
+
+       
+        print("--------------------------")
+        lista_musicas = [(faixa["artista_principal"], faixa["nome_faixa"]) 
+        for faixa in top_faixas_unicas.values()]
+        
+
+       
+        
+        ## 2 realizar a estracao de letra de cada uma delas
+        print("extraindo letras de musicas")
+        letras_musicas = await buscar_letras_em_batch(lista_musicas)
+
+        for i, (chave, dados_faixa) in enumerate(top_faixas_unicas.items()):
+            dados_faixa["letra"] = letras_musicas[i]["letra"]
+
+        
+        
+        print("extraindo emocoes")
+        lista_letras = [faixa["letra"] for faixa in top_faixas_unicas.values()]
+
+        lista_emocoes = await extrair_emocoes_em_batch(lista_letras)
+
+        for i, (chave, dados_faixa) in enumerate(top_faixas_unicas.items()):
+            dados_faixa["emocoes"] = lista_emocoes[i]
+
+        
+      
+
+        
+        ## 4 salvar cada faixa no banc de dados
+        lista_faixas_para_adicionar = []
+        for chave, valor_faixa in top_faixas_unicas.items():
+            faixa = {
+                "id_faixa": valor_faixa["id_faixa"],
+                "nome_faixa": valor_faixa["nome_faixa"],
+                "emocoes": valor_faixa["emocoes"],
+                "duracao_ms": valor_faixa["duracao_ms"],
+                "popularidade": valor_faixa["popularidade"],
+                "album": valor_faixa["album"],
+                "link_imagem": valor_faixa["link_imagem"]
+            }
+
+            lista_faixas_para_adicionar.append(faixa)
+            
+        print("salvando faixas no banco de dados")
+        response = await salvar_faixas_em_batch(db, lista_faixas_para_adicionar)
+
+        
+
+        
+
+
+        ## 5 salvar o relacoinamento usuarioTopFaixas
+
+
 
         print("inserindo faixas no bd")
         
