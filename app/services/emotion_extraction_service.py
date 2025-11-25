@@ -6,6 +6,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from app.core.aws_config import aws_bedrock_client
+import json
 
 
 
@@ -86,5 +87,43 @@ async def extrair_emocoes_em_batch(lista_de_letras: list[str]) -> list[dict]:
     resultados = await asyncio.gather(*tasks)
     
     return resultados
+
+
+async def get_perfil_emocional(emocoes: dict) -> str:
+    prompt =  f"""
+    Você é um analista especializado em comportamento musical e perfil emocional.
+
+A seguir está um JSON com a média das intensidades emocionais (0 a 1) identificadas nas músicas mais ouvidas do usuário:
+
+{json.dumps(emocoes)}
+
+Com base nesses valores, escreva um texto curto (OBRIGATORIAMENTE no máximo 4 linhas) descrevendo:
+1. O perfil musical do usuário.
+2. Como essa preferência musical se conecta com a visão de mundo dele.
+
+- Seja intuitivo, direto e humano.
+- Não cite números ou valores do JSON.
+- Não repita o JSON.
+- Não use linguagem técnica de análise; apenas interpretação natural.
+- Dê ênfase nas duas emoções com pontuação mais alta, mas sem citar valores
+    
+
+"""
+    
+    call = partial(
+        aws_bedrock_client.converse,
+        modelId="amazon.nova-lite-v1:0",
+        messages=[{"role": "user", "content": [{"text": prompt}]}]
+    )
+
+    try:
+        response = await asyncio.to_thread(call)
+        raw_output = response["output"]["message"]["content"][0]["text"]
+        raw_output = raw_output.replace("```json", "").replace("```", "").strip()
+        return raw_output
+    except Exception as e:
+        print(f"Erro ao chamar Bedrock: {e}")
+        return {"erro": str(e)}
+    
 
 
