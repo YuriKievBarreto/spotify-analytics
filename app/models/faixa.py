@@ -1,4 +1,4 @@
-from sqlalchemy import String, JSON, Integer
+from sqlalchemy import String, JSON, Integer, Text
 from sqlalchemy.orm import  Mapped, mapped_column, relationship
 from typing import List
 
@@ -15,6 +15,7 @@ class Faixa(Base):
     popularidade: Mapped[int] =  mapped_column(Integer, nullable=False)
     album: Mapped[str] = mapped_column(String(255), nullable= False)
     link_imagem: Mapped[str] = mapped_column(String(255), nullable=False)
+    letra_faixa: Mapped[str] = mapped_column(Text, nullable=True)
 
     top_usuarios_rel: Mapped[List["UsuarioTopFaixa"]] = relationship(
         back_populates="faixa"

@@ -6,11 +6,11 @@ from spotipy import Spotify
 from app.services.spotipy_service import get_top_faixas
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.schema_usuario import UsuarioCreate
-from app.models.relacionamentos import UsuarioTopArtista
+from app.models.relacionamentos import UsuarioTopFaixa
 from datetime import datetime, timedelta, timezone
 from app.services.crud.user_crud import criar_usuario
 from app.services.crud.faixa_crud import salvar_faixas_em_batch
-from app.services.crud.relacionamentos_crud import salvar_relacionamentos_em_lote
+from app.services.crud.relacionamentos_crud import salvar_UsuarioTopFaixa_em_lote
 from app.services.spotipy_service import get_current_user_details
 from app.services.extracao_de_letras import buscar_letras_em_batch
 from app.services.emotion_extraction_service import extrair_emocoes_em_batch
@@ -126,7 +126,8 @@ async def salvar_top_faixas(user_id:str, access_token:str):
                 "duracao_ms": valor_faixa["duracao_ms"],
                 "popularidade": valor_faixa["popularidade"],
                 "album": valor_faixa["album"],
-                "link_imagem": valor_faixa["link_imagem"]
+                "link_imagem": valor_faixa["link_imagem"],
+                "letra_faixa": valor_faixa["letra"]
             }
 
             lista_faixas_para_adicionar.append(faixa)
@@ -140,12 +141,22 @@ async def salvar_top_faixas(user_id:str, access_token:str):
 
 
         ## 5 salvar o relacoinamento usuarioTopFaixas
-
-        await salvar_relacionamentos_em_lote(
+        """
+            id-usuari
+            id_faixa
+            _short_time_rank
+            long_time_rank
+            usuario
+            faixa
+       
+     
+        await salvar_UsuarioTopFaixa_em_lote(
                 db, 
-                UsuarioTopArtista, # <--- O modelo ORM que representa a tabela de relacionamento
-                #lista_top_musicas_para_salvar
+                
+                
             )
+
+             """
 
 
 

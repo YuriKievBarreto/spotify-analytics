@@ -40,3 +40,6 @@ class GeneroArtista(Base):
 
     artista: Mapped["Artista"] = relationship(back_populates="generos_rel")
 
+
+   
+

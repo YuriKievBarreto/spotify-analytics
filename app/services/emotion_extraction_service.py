@@ -29,6 +29,7 @@ async def extrair_emocoes(letra_musica: str):
     "alegria": 0.75,
     "otimismo": 0.70,
     "esperanca": 0.65,
+    "introspeccao": 0.20,
     "paz": 0.50,
     "amor": 0.20,
     "tristeza": 0.05,
@@ -40,9 +41,12 @@ async def extrair_emocoes(letra_musica: str):
     "desespero": 0.02,
     "rebeldia": 0.01,
     "anseio": 0.15,
-    "empoderamento": 0.20
+    "autoafirmação": 0.20,
+    "sensualidade: 0.50",
+    "sexual_explicit: 0.20"
     }}
 
+    observação: Use sensualidade apenas para conteúdo sexual explícito ou muito direto. Letras apenas românticas ou sedutoras NÃO devem receber esse rótulo
 
     Letra da música:
     "{letra_musica}"
@@ -51,7 +55,7 @@ async def extrair_emocoes(letra_musica: str):
 
     call = partial(
         aws_bedrock_client.converse,
-        modelId="amazon.nova-lite-v1:0",
+        modelId="amazon.nova-pro-v1:0", #"amazon.nova-lite-v1:0",
         messages=[{"role": "user", "content": [{"text": prompt}]}]
     )
 

@@ -3,33 +3,34 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.relacionamentos import UsuarioTopArtista, UsuarioTopFaixa, GeneroArtista
 from app.models.faixa import Faixa  
 from sqlalchemy import select
-from typing import Type
+from typing import Type, List, Dict
 
 
-async def salvar_relacionamentos_em_lote(db: AsyncSession,
-                                         modelo_orm: Type[Base],
-                                         lista_de_dados: list[dict]):
+
+
+async def salvar_UsuarioTopFaixa_em_lote(
+    db: AsyncSession, 
+    lista_de_relacoes: List[Dict]
+):
     
-    print(f"Iniciando inserção direta em lote na tabela {modelo_orm.__tablename__}...")
-
-    if not lista_de_dados:
-        print("Lista de dados vazia. Nenhuma ação realizada.")
+    if not lista_de_relacoes:
         return []
-    
+
     try:
-        # 1. Converte a lista de dicionários (input) em objetos ORM
-        objetos_a_inserir = [modelo_orm(**dados) for dados in lista_de_dados]
+        # 1. Converte a lista de dicionários em objetos ORM
+        objetos_a_inserir = [UsuarioTopFaixa(**dados) for dados in lista_de_relacoes]
         
-        # 2. Adiciona TODOS os objetos de uma vez na sessão (Bulk Insert)
+        # 2. Inserção em massa: Adiciona todos de uma vez
         db.add_all(objetos_a_inserir)
         
-        # 3. Confirma a transação no DB
+        # 3. Confirma a transação
         await db.commit()
         
-        print(f"✅ Inseridas {len(objetos_a_inserir)} linhas na tabela {modelo_orm.__tablename__}.")
+        print(f"✅ Inseridas {len(objetos_a_inserir)} novas relações UsuarioTopFaixa.")
         return objetos_a_inserir
 
     except Exception as e:
+        # Em caso de erro (ex: duplicata de PK), o rollback desfaz tudo
         await db.rollback() 
-        print(f"❌ ERRO FATAL ao inserir em lote na tabela {modelo_orm.__tablename__}:", e)
+        print("❌ ERRO ao inserir relações em lote:", e)
         raise

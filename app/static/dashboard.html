@@ -173,6 +173,8 @@
         }
 
         const data = await response.json();
+        console.log("PRINTANDO DATA")
+        console.log(data)
 
         // ===== Música =====
         const topTrack = Object.values(data.top_faixas)[0];

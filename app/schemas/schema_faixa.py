@@ -9,6 +9,7 @@ class FaixaSchema(BaseModel):
     popularidade: int
     album: str
     link_imagem: str
+    letra: str
 
 
     top_faixas_rel: List["UsuarioTopFaixaSchema"]
@@ -26,6 +27,7 @@ class FaixaCreate(BaseModel):
     popularidade: int 
     duracao_ms: int 
     link_imagem: str = Field(..., alias='link_imagem')
+    letra_faixa:  str = Field(..., alias='letra_faixa')
     
 
     class Config:
