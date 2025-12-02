@@ -24,9 +24,9 @@ class UsuarioTopFaixa(Base):
     id_usuario: Mapped[str] = mapped_column(ForeignKey('usuario.id_usuario'), primary_key=True)
     id_faixa: Mapped[str] = mapped_column(ForeignKey('faixa.id_faixa'), primary_key=True)
 
-    short_time_rank: Mapped[int] = mapped_column(Integer, nullable=False)
-    medium_time_rank: Mapped[int] = mapped_column(Integer, nullable=False)
-    long_time_rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    short_time_rank: Mapped[int] = mapped_column(Integer, nullable=True)
+    medium_time_rank: Mapped[int] = mapped_column(Integer, nullable=True)
+    long_time_rank: Mapped[int] = mapped_column(Integer, nullable=True)
 
     usuario: Mapped["Usuario"] = relationship(back_populates="top_faixas_rel")
     faixa: Mapped["Faixa"] = relationship(back_populates="top_usuarios_rel")

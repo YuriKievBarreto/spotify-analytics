@@ -7,14 +7,18 @@ from app.services.spotipy_service import get_top_faixas
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.schema_usuario import UsuarioCreate
 from app.models.relacionamentos import UsuarioTopFaixa
+from app.models.faixa import Faixa 
+from app.models.usuario import Usuario #
+from sqlalchemy import select 
+from sqlalchemy.orm import selectinload, attributes 
 from datetime import datetime, timedelta, timezone
-from app.services.crud.user_crud import criar_usuario
+from typing import Dict, List, Optional
+# Importações de CRUD
+from app.services.crud.user_crud import criar_usuario, ler_usuario
 from app.services.crud.faixa_crud import salvar_faixas_em_batch
-from app.services.crud.relacionamentos_crud import salvar_UsuarioTopFaixa_em_lote
 from app.services.spotipy_service import get_current_user_details
 from app.services.extracao_de_letras import buscar_letras_em_batch
 from app.services.emotion_extraction_service import extrair_emocoes_em_batch
-
 
 
 async def refresh_and_get_access_token(db: AsyncSession, user_id: str, refresh_token: str) -> str:
@@ -23,12 +27,11 @@ async def refresh_and_get_access_token(db: AsyncSession, user_id: str, refresh_t
     )
 
     new_access_token = new_token_info['access_token']
-   # access_token=new_token_info['access_token']
+    # access_token=new_token_info['access_token']
     new_refresh_token=new_token_info.get('refresh_token', refresh_token)
     expires_in=new_token_info['expires_in']
 
     token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
-
 
 
     return {
@@ -36,7 +39,7 @@ async def refresh_and_get_access_token(db: AsyncSession, user_id: str, refresh_t
         "new_refresh_token":new_refresh_token,
         "new_expires_at":token_expires_at
     }
-     
+      
     
 
 async def busca_informacoes_do_usuario(sp_client: spotipy.Spotify):
@@ -51,14 +54,14 @@ async def salvar_dados_iniciais_do_usuario(token_info):
 
         user_create_data = UsuarioCreate(
             id_usuario = user_dict["id_usuario"],
-            nome_exibicao =  user_dict["nome_exibicao"],
+            nome_exibicao = user_dict["nome_exibicao"],
             pais = user_dict["pais"],
             access_token = user_dict["access_token"],
             refresh_token = user_dict["refresh_token"],
             token_expires_at = user_dict["token_expires_at"]
         )
 
-       
+        
         user_data_dict = user_create_data.model_dump()
         db_user = await criar_usuario(db, user_data_dict)
 
@@ -66,12 +69,70 @@ async def salvar_dados_iniciais_do_usuario(token_info):
 
         pass
 
+
+
+async def salvar_relacionamentos_top_faixas(
+    db: AsyncSession, 
+    user_id: str, 
+    faixa_ids: List[str], 
+    rank_map: Dict[str, Dict[str, Optional[int]]]
+):
+    
+    print("Preparando para criar associações...")
+
+    
+    stmt_user = select(Usuario).where(Usuario.id_usuario == user_id).options(
+        selectinload(Usuario.top_faixas_rel)
+    )
+    usuario_atual = await db.scalar(stmt_user)
+    
+    if not usuario_atual:
+        print(f"Erro: Usuário {user_id} não encontrado.")
+        return
+
+  
+    stmt_faixas = select(Faixa).where(Faixa.id_faixa.in_(faixa_ids))
+    result = await db.execute(stmt_faixas)
+    faixas_orm_salvas = result.scalars().all()
+    faixas_map = {faixa.id_faixa: faixa for faixa in faixas_orm_salvas}
+
+   
+    usuario_atual.top_faixas_rel.clear() 
+
+    
+    for faixa_id in faixa_ids:
+        faixa_orm = faixas_map.get(faixa_id)
+        ranks = rank_map.get(faixa_id) 
+
+        if faixa_orm and ranks:
+          
+            ass = UsuarioTopFaixa(
+                faixa=faixa_orm, 
+                short_time_rank=ranks["short"],
+                medium_time_rank=ranks["medium"],
+                long_time_rank=ranks["long"]
+            )
+            
+            
+            usuario_atual.top_faixas_rel.append(ass)
+            
+   
+    num_relacionamentos_salvos = len(usuario_atual.top_faixas_rel)
+
+
+  
+    await db.commit() 
+    
+   
+    print(f"Finalizado salvamento de {num_relacionamentos_salvos} relacionamentos com sucesso!")
+  
+
 async def salvar_top_faixas(user_id:str, access_token:str):
     print("iniciando salvamento de top faixas do usuario no bancon de dados")
 
     async with AsyncSession(async_engine) as db:
-        ## 1. Obter as 25 top faixas do usuario
-        print("puxando top 25 faixas do short term")
+     
+        print("puxando top 25 faixas de todos os periodos de tempo")
         top_faixas = await get_top_faixas(access_token, quantitade=5, time_ranges=["short_term", "medium_term", "long_term"])
         
         top_faixas_unicas = {}
@@ -85,17 +146,13 @@ async def salvar_top_faixas(user_id:str, access_token:str):
                 top_faixas_unicas[id_faixa] = faixa_dados
 
         
-
-
-       
         print("--------------------------")
         lista_musicas = [(faixa["artista_principal"], faixa["nome_faixa"]) 
         for faixa in top_faixas_unicas.values()]
         
-
-       
         
-        ## 2 realizar a estracao de letra de cada uma delas
+        
+        
         print("extraindo letras de musicas")
         letras_musicas = await buscar_letras_em_batch(lista_musicas)
 
@@ -113,14 +170,19 @@ async def salvar_top_faixas(user_id:str, access_token:str):
             dados_faixa["emocoes"] = lista_emocoes[i]
 
         
-      
-
         
-        ## 4 salvar cada faixa no banc de dados
+        
+        rank_map = {} 
+        
+       
         lista_faixas_para_adicionar = []
-        for chave, valor_faixa in top_faixas_unicas.items():
-            faixa = {
-                "id_faixa": valor_faixa["id_faixa"],
+
+        for i, (chave, valor_faixa) in enumerate(top_faixas_unicas.items()):
+            faixa_id = valor_faixa["id_faixa"]
+            
+           
+            faixa_dict = {
+                "id_faixa": faixa_id,
                 "nome_faixa": valor_faixa["nome_faixa"],
                 "emocoes": valor_faixa["emocoes"],
                 "duracao_ms": valor_faixa["duracao_ms"],
@@ -130,41 +192,20 @@ async def salvar_top_faixas(user_id:str, access_token:str):
                 "letra_faixa": valor_faixa["letra"]
             }
 
-            lista_faixas_para_adicionar.append(faixa)
+            lista_faixas_para_adicionar.append(faixa_dict)
             
-        print("salvando faixas no banco de dados")
-        response = await salvar_faixas_em_batch(db, lista_faixas_para_adicionar)
+           
+            rank_map[faixa_id] = {
+                "short": valor_faixa.get("short_term_rank"), 
+                "medium": valor_faixa.get("medium_term_rank"), 
+                "long": valor_faixa.get("long_term_rank")
+            }
+            
+        print("salvando/atualizando faixas no banco de dados (Passo 1/2)")
+      
+        await salvar_faixas_em_batch(db, lista_faixas_para_adicionar)
 
-        
-
-        
-
-
-        ## 5 salvar o relacoinamento usuarioTopFaixas
-        """
-            id-usuari
-            id_faixa
-            _short_time_rank
-            long_time_rank
-            usuario
-            faixa
-       
-     
-        await salvar_UsuarioTopFaixa_em_lote(
-                db, 
-                
-                
-            )
-
-             """
-
-
-
-        print("inserindo faixas no bd")
         
        
-
-        
-
-
-
+        faixa_ids = list(top_faixas_unicas.keys())
+        await salvar_relacionamentos_top_faixas(db, user_id, faixa_ids, rank_map)
