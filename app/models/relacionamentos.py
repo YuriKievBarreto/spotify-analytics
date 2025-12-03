@@ -9,8 +9,8 @@ class UsuarioTopArtista(Base):
     __tablename__ = "usuario_top_artista"
 
     id_usuario: Mapped[str] = mapped_column(ForeignKey("usuario.id_usuario"), primary_key=True)
-    id_artista: Mapped[str] = mapped_column(ForeignKey("artista.id_artista"))
-    
+    id_artista: Mapped[str] = mapped_column(ForeignKey("artista.id_artista"), primary_key=True)
+
     short_time_rank: Mapped[int] = mapped_column(Integer, nullable=True)
     medium_time_rank: Mapped[int] = mapped_column(Integer, nullable=True)
     long_time_rank: Mapped[int] = mapped_column(Integer, nullable=True)

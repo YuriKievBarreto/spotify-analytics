@@ -6,9 +6,10 @@ from spotipy import Spotify
 from app.services.spotipy_service import get_top_faixas, get_top_artistas
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.schema_usuario import UsuarioCreate
-from app.models.relacionamentos import UsuarioTopFaixa
+from app.models.relacionamentos import UsuarioTopFaixa, UsuarioTopArtista
 from app.models.faixa import Faixa 
-from app.models.usuario import Usuario #
+from app.models.usuario import Usuario
+from app.models.artista import Artista #
 from sqlalchemy import select 
 from sqlalchemy.orm import selectinload, attributes 
 from datetime import datetime, timedelta, timezone
@@ -218,11 +219,12 @@ async def salvar_top_artistas(user_id: str, access_token: str):
     async with AsyncSession(async_engine) as db:
         top_artistas = await get_top_artistas(access_token=access_token, quantitade=10, time_ranges=["short_term", "medium_term", "long_term"])
         
-
+        rank_map = {} 
         lista_artistas_para_adicionar = []
         for chave, valor in top_artistas.items():
+            id_artista = valor["id_artista"]
             dict_artista = {
-                "id_artista": valor["id_artista"],
+                "id_artista": id_artista,
                 "nome_artista": valor["nome_artista"],
                 "popularidade_artista": valor["popularidade_artista"],
                 "link_imagem": valor["link_imagem"],
@@ -231,12 +233,75 @@ async def salvar_top_artistas(user_id: str, access_token: str):
 
             lista_artistas_para_adicionar.append(dict_artista)
 
+            rank_map[id_artista] = {
+            "short": valor.get("short_term_rank"), 
+            "medium": valor.get("medium_term_rank"), 
+            "long": valor.get("long_term_rank")
+        }
+            
+
         
         await salvar_artistas_em_batch(db, lista_artistas_para_adicionar)
+        artistas_ids = list(top_artistas.keys())
+        await salvar_relacionamentos_top_artistas(db, user_id, artistas_ids, rank_map)
 
 
-        
+    
 
-            
+
+async def salvar_relacionamentos_top_artistas(
+    db: AsyncSession, 
+    user_id: str, 
+    artista_ids: List[str], 
+    rank_map: Dict[str, Dict[str, Optional[int]]]
+):
+    
+    print("Preparando para criar associações...")
+
+    
+    stmt_user = select(Usuario).where(Usuario.id_usuario == user_id).options(
+        selectinload(Usuario.top_artistas_rel)
+    )
+    usuario_atual = await db.scalar(stmt_user)
+    
+    if not usuario_atual:
+        print(f"Erro: Usuário {user_id} não encontrado.")
         return
+
+  
+    stmt_artistas = select(Artista).where(Artista.id_artista.in_(artista_ids))
+    result = await db.execute(stmt_artistas)
+    artistas_orm_salvas = result.scalars().all()
+    artistas_map = {artista.id_artista: artista for artista in artistas_orm_salvas}
+
+   
+    usuario_atual.top_artistas_rel.clear() 
+
+    
+    for artista_id in artista_ids:
+        artista_orm = artistas_map.get(artista_id)
+        ranks = rank_map.get(artista_id) 
+
+        if artista_orm and ranks:
+          
+            ass = UsuarioTopArtista(
+                artista=artista_orm, 
+                short_time_rank=ranks["short"],
+                medium_time_rank=ranks["medium"],
+                long_time_rank=ranks["long"]
+            )
+            
+            
+            usuario_atual.top_artistas_rel.append(ass)
+            
+   
+    num_relacionamentos_salvos = len(usuario_atual.top_artistas_rel)
+
+
+  
+    await db.commit() 
+    
+   
+    print(f"Finalizado salvamento de {num_relacionamentos_salvos} relacionamentos com sucesso!")
+  
     
