@@ -16,6 +16,7 @@ class Faixa(Base):
     album: Mapped[str] = mapped_column(String(255), nullable= False)
     link_imagem: Mapped[str] = mapped_column(String(255), nullable=False)
     letra_faixa: Mapped[str] = mapped_column(Text, nullable=True)
+    artista_principal: Mapped[str] = mapped_column(String(255), nullable=False)
 
     top_usuarios_rel: Mapped[List["UsuarioTopFaixa"]] = relationship(
         back_populates="faixa"

@@ -11,6 +11,3 @@ async def dashboard(request: Request):
     user_id = request.query_params.get("user_id")
     return {"id do usuario: ", }
 
-@dashboard_router.get("/top-musicas")
-async def user_top_musicas():
-    return

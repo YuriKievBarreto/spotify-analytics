@@ -189,7 +189,8 @@ async def salvar_top_faixas(user_id:str, access_token:str):
                 "popularidade": valor_faixa["popularidade"],
                 "album": valor_faixa["album"],
                 "link_imagem": valor_faixa["link_imagem"],
-                "letra_faixa": valor_faixa["letra"]
+                "letra_faixa": valor_faixa["letra"],
+                "artista_principal": valor_faixa["artista_principal"]
             }
 
             lista_faixas_para_adicionar.append(faixa_dict)

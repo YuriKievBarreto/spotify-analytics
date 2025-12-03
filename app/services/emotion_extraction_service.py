@@ -41,7 +41,7 @@ async def extrair_emocoes(letra_musica: str):
     "desespero": 0.02,
     "rebeldia": 0.01,
     "anseio": 0.15,
-    "autoafirmação": 0.20,
+    "autoafirmacao": 0.20,
     "sensualidade: 0.50",
     "sexual_explicit: 0.20"
     }}

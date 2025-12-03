@@ -1,22 +1,26 @@
 from app.schemas.schema_faixa import FaixaCreate
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.faixa import Faixa  
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import async_engine
 from sqlalchemy import select
 
 
-async def ler_faixa(id_faixa:str, db: AsyncSession):
-    try:
-        db_faixa = await db.get(Faixa, id_faixa)
+async def ler_faixa(id_faixa:str):
+     async with AsyncSession(async_engine) as db:
+        try:
+            db_faixa = await db.get(Faixa, id_faixa)
 
-        if db_faixa is None:
-            print("Faixa de id {user_id} não encontrada")
-            return None
-        
-        print("faixa_encontrada encontrado")
-        return db_faixa
+            if db_faixa is None:
+                print("Faixa de id {user_id} não encontrada")
+                return None
     
-    except Exception as e:
-        raise e
+            print("faixa_encontrada encontrado")
+            return db_faixa
+
+        except Exception as e:
+            raise e
+
     
 
 
