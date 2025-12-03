@@ -24,5 +24,21 @@ async def ler_usuario_top_faixas(id_usuario: str):
    return result.scalars().all()
 
 
+async def ler_usuario_top_artistas(id_usuario: str):
+   async with AsyncSession(async_engine) as db:
+      print("iniciando busca de relacionamentos")
+      stmt = select(UsuarioTopArtista).where(
+         UsuarioTopArtista.id_usuario == id_usuario
+      ).options(
+         joinedload(UsuarioTopArtista.artista) 
+      ).order_by(
+        UsuarioTopArtista.short_time_rank.asc()
+    )
+      
+   result =  await db.execute(stmt)
+   return result.scalars().all()
+
+
+
 
 

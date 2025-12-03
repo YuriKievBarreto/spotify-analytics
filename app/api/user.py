@@ -8,8 +8,7 @@ from app.core.database import get_session
 from datetime import datetime, timezone
 from app.services.crud.user_crud import ler_usuario
 from app.services.spotipy_service import get_top_faixas, get_top_artistas, get_user_top_genres
-from app.services.crud.faixa_crud import ler_faixa
-from app.services.crud.relacionamentos_crud import ler_usuario_top_faixas
+from app.services.crud.relacionamentos_crud import ler_usuario_top_faixas, ler_usuario_top_artistas
 import numpy as np
 import json
 import pandas as pd
@@ -96,27 +95,11 @@ async def valida_credenciais(spotify_user_id: str, db: AsyncSession):
 @user_router.get("/top-musicas")
 async def user_top_musicas( user_id: str = Depends(get_current_user_id)):
 
-    """
-    o que preciso retornar em top_musicas:
-
-    nome_musica ok
-    album_musica ok
-    short_time_rank
-    medium_time_rank
-    long_time_rank
-    popularidade_musica 
-    sentimento predominante ok
-    pontuacao_sentimento_predominante(0 a 1)
-    duracao_ms ok
-    duracao+media ok
-
-    """
     relacoinamentos = await ler_usuario_top_faixas(user_id)
     
 
     lista_emocoes = [rel.faixa.emocoes for rel in relacoinamentos]
     lista_faixas = np.array([rel.faixa.duracao_ms for rel in relacoinamentos])
-    media_duracao_ms =  int(np.round(lista_faixas.mean(), 0))
     popularidade_media =  np.array([rel.faixa.popularidade for rel in relacoinamentos])
     pop_media = int(np.round(popularidade_media.mean(), 0))
     
@@ -131,8 +114,6 @@ async def user_top_musicas( user_id: str = Depends(get_current_user_id)):
     resultado_np = np.round(resultado_np, 2)
    
 
-    resultado_python_list = resultado_np.tolist()
-    resultado_agregado = dict(zip(df_emocoes.columns, resultado_python_list))    
 
 
     dict_resposta = {
@@ -165,5 +146,26 @@ def converter_faixa_e_relacionamento_para_dict(rel):
         "artista_principal": rel.faixa.artista_principal
     }
 
+@user_router.get("/top-artistas")
+async def user_top_artistas( user_id: str = Depends(get_current_user_id)):
+
+    relacoinamentos = await ler_usuario_top_artistas(user_id)
+    print("rodando top artistas")
+
+    
+    dict_resposta =  [converter_artista_e_relacionamento_para_dict(rel) for rel in relacoinamentos]
+    
+    return dict_resposta
 
 
+
+def converter_artista_e_relacionamento_para_dict(rel):
+    return {
+        "nome_artista": rel.artista.nome_artista,
+        "link_imagem": rel.artista.link_imagem,
+        "short_rank": rel.short_time_rank,
+        "medium_rank": rel.medium_time_rank,
+        "long_rank": rel.long_time_rank,
+        "popularidade_artista": rel.artista.popularidade_artista,
+        "generos": rel.artista.generos
+    }
