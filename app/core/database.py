@@ -42,13 +42,13 @@ async def init_db():
     from app.models.usuario import Usuario 
     from app.models.artista import  Artista 
     from app.models.faixa import Faixa 
-    from app.models.relacionamentos import UsuarioTopArtista, UsuarioTopFaixa, GeneroArtista
+    from app.models.relacionamentos import UsuarioTopArtista, UsuarioTopFaixa
     
     try:
          async with async_engine.begin() as conn:
             print("iniciando tentativa de conexao com o banco de dados")
-            #print("apagando todas as tabelas")
-            #await conn.run_sync(Base.metadata.drop_all)
+            print("apagando todas as tabelas")
+            await conn.run_sync(Base.metadata.drop_all)
             print("criando todas as tabelas")
             await conn.run_sync(Base.metadata.create_all)
             print("conexao bem sucedida")

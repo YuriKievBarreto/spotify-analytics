@@ -19,8 +19,10 @@ class UsuarioTopFaixaSchema(BaseModel):
         from_attributes: True
 
 
+"""
 class GeneroArtistaSchema(BaseModel):
     nome_genero: str
 
     class Config:
         from_attributes: True
+"""

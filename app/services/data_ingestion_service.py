@@ -3,7 +3,7 @@ from app.core.spotipy_auth import sp_oauth_manager
 import spotipy
 import asyncio
 from spotipy import Spotify
-from app.services.spotipy_service import get_top_faixas
+from app.services.spotipy_service import get_top_faixas, get_top_artistas
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.schema_usuario import UsuarioCreate
 from app.models.relacionamentos import UsuarioTopFaixa
@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 # Importações de CRUD
 from app.services.crud.user_crud import criar_usuario, ler_usuario
+from app.services.crud.artista_crud import salvar_artistas_em_batch
 from app.services.crud.faixa_crud import salvar_faixas_em_batch
 from app.services.spotipy_service import get_current_user_details
 from app.services.extracao_de_letras import buscar_letras_em_batch
@@ -133,7 +134,7 @@ async def salvar_top_faixas(user_id:str, access_token:str):
     async with AsyncSession(async_engine) as db:
      
         print("puxando top 25 faixas de todos os periodos de tempo")
-        top_faixas = await get_top_faixas(access_token, quantitade=5, time_ranges=["short_term", "medium_term", "long_term"])
+        top_faixas = await get_top_faixas(access_token, quantitade=1, time_ranges=["short_term", "medium_term", "long_term"])
         
         top_faixas_unicas = {}
         tuplas_vistas = set()
@@ -210,3 +211,32 @@ async def salvar_top_faixas(user_id:str, access_token:str):
        
         faixa_ids = list(top_faixas_unicas.keys())
         await salvar_relacionamentos_top_faixas(db, user_id, faixa_ids, rank_map)
+
+
+
+async def salvar_top_artistas(user_id: str, access_token: str):
+    async with AsyncSession(async_engine) as db:
+        top_artistas = await get_top_artistas(access_token=access_token, quantitade=10, time_ranges=["short_term", "medium_term", "long_term"])
+        
+
+        lista_artistas_para_adicionar = []
+        for chave, valor in top_artistas.items():
+            dict_artista = {
+                "id_artista": valor["id_artista"],
+                "nome_artista": valor["nome_artista"],
+                "popularidade_artista": valor["popularidade_artista"],
+                "link_imagem": valor["link_imagem"],
+                "generos": valor["generos_artista"]
+            }
+
+            lista_artistas_para_adicionar.append(dict_artista)
+
+        
+        await salvar_artistas_em_batch(db, lista_artistas_para_adicionar)
+
+
+        
+
+            
+        return
+    

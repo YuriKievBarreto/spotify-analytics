@@ -1,7 +1,7 @@
 from app.schemas.schema_faixa import FaixaCreate
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import async_engine
-from app.models.relacionamentos import UsuarioTopArtista, UsuarioTopFaixa, GeneroArtista
+from app.models.relacionamentos import UsuarioTopArtista, UsuarioTopFaixa
 from app.models.faixa import Faixa  
 from sqlalchemy.orm import joinedload
 from sqlalchemy import select

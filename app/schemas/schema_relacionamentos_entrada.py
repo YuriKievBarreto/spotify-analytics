@@ -22,9 +22,10 @@ class UsuarioTopFaixaCreate(BaseModel):
     long_time_rank: int
     
 
+"""
 class GeneroArtistaCreate(BaseModel):
    
     id_artista: str
     nome_genero: str
-    
+    """
    

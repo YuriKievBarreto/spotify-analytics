@@ -3,7 +3,7 @@ from app.core.spotipy_auth import sp_oauth_manager
 from starlette.responses import RedirectResponse
 from spotipy import Spotify
 from fastapi import BackgroundTasks
-from app.services.data_ingestion_service import salvar_dados_iniciais_do_usuario, salvar_top_faixas
+from app.services.data_ingestion_service import salvar_dados_iniciais_do_usuario, salvar_top_faixas, salvar_top_artistas
 from app.core.security import create_access_token   
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.crud.user_crud import ler_usuario
@@ -57,6 +57,14 @@ async def spotify_callback(
         # salva top faixas de forma assíncrona
         background_tasks.add_task(
             salvar_top_faixas,
+            user_id,
+            access_token
+        )
+
+        # salvar top artistas
+
+        background_tasks.add_task(
+            salvar_top_artistas,
             user_id,
             access_token
         )

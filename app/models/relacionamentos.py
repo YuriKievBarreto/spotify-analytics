@@ -10,9 +10,10 @@ class UsuarioTopArtista(Base):
 
     id_usuario: Mapped[str] = mapped_column(ForeignKey("usuario.id_usuario"), primary_key=True)
     id_artista: Mapped[str] = mapped_column(ForeignKey("artista.id_artista"))
-    time_range: Mapped[str] = mapped_column(String(10), primary_key=True)
-
-    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    
+    short_time_rank: Mapped[int] = mapped_column(Integer, nullable=True)
+    medium_time_rank: Mapped[int] = mapped_column(Integer, nullable=True)
+    long_time_rank: Mapped[int] = mapped_column(Integer, nullable=True)
 
     usuario: Mapped["Usuario"] = relationship(back_populates="top_artistas_rel")
     artista: Mapped["Artista"] = relationship(back_populates="top_usuarios_rel")
@@ -32,6 +33,7 @@ class UsuarioTopFaixa(Base):
     faixa: Mapped["Faixa"] = relationship(back_populates="top_usuarios_rel")
 
 
+"""
 class GeneroArtista(Base):
     __tablename__ = "genero_artista"
 
@@ -42,4 +44,4 @@ class GeneroArtista(Base):
 
 
    
-
+"""
