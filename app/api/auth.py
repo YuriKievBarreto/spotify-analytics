@@ -45,7 +45,7 @@ async def spotify_callback(
    
 
   
-    usuario_bd = await ler_usuario(user_id=user_id, db=db)
+    usuario_bd = await ler_usuario(user_id=user_id)
 
     if usuario_bd is None:
         print("Usuário novo — criando dados iniciais...")

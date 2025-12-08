@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.usuario import Usuario  
 from datetime import datetime
+from app.core.database import async_engine
 
 async def criar_usuario(db: AsyncSession, user_data_dict):
 
@@ -54,18 +55,19 @@ async def atualizar_credenciais_usuario(db: AsyncSession,
         raise e
     
 
-async def ler_usuario(user_id:str, db: AsyncSession):
-    try:
-        db_user = await db.get(Usuario, user_id)
+async def ler_usuario(user_id:str):
+   async with AsyncSession(async_engine) as db:
+        try:
+            db_user = await db.get(Usuario, user_id)
 
-        if db_user is None:
-            print("Usuario de id {user_id} não encontrado")
-            return None
-        
-        print("usuario encontrado")
-        return db_user
+            if db_user is None:
+                print("Usuario de id {user_id} não encontrado")
+                return None
+            
+            print("usuario encontrado")
+            return db_user
     
-    except Exception as e:
-        raise e
+        except Exception as e:
+            raise e 
 
 

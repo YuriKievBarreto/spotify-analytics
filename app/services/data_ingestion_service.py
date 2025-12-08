@@ -135,14 +135,14 @@ async def salvar_top_faixas(user_id:str, access_token:str):
     async with AsyncSession(async_engine) as db:
      
         print("puxando top 25 faixas de todos os periodos de tempo")
-        top_faixas = await get_top_faixas(access_token, quantitade=1, time_ranges=["short_term", "medium_term", "long_term"])
+        top_faixas = await get_top_faixas(access_token, quantitade=3, time_ranges=["short_term", "medium_term", "long_term"])
         
         top_faixas_unicas = {}
         tuplas_vistas = set()
 
         for id_faixa, faixa_dados in top_faixas.items():
             chave_de_unicidade = (faixa_dados["artista_principal"], faixa_dados["nome_faixa"])
-    
+ 
             if chave_de_unicidade not in tuplas_vistas:
                 tuplas_vistas.add(chave_de_unicidade)
                 top_faixas_unicas[id_faixa] = faixa_dados

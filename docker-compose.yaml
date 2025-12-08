@@ -36,18 +36,5 @@ services:
     ports:
       - "5432:5432"
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin_spotify_analytics
-    restart: always
-    environment:
-    
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    ports:
-      - "15432:80" 
-    depends_on:
-      - db
-
 volumes:
   postgres_data:

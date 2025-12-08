@@ -4,7 +4,8 @@ import asyncio
 from functools import partial
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-
+from app.services.crud.user_crud import ler_usuario
+import math
 from app.core.aws_config import aws_bedrock_client
 import json
 
@@ -94,6 +95,7 @@ async def extrair_emocoes_em_batch(lista_de_letras: list[str]) -> list[dict]:
 
 
 async def get_perfil_emocional(emocoes: dict) -> str:
+    print("analisando perfil emocional...")
     prompt =  f"""
     Você é um analista especializado em comportamento musical e perfil emocional.
 
@@ -101,11 +103,12 @@ A seguir está um JSON com a média das intensidades emocionais (0 a 1) identifi
 
 {json.dumps(emocoes)}
 
-Com base nesses valores, escreva um texto curto (OBRIGATORIAMENTE no máximo 4 linhas) descrevendo:
+Com base nesses valores, escreva um texto curto (OBRIGATORIAMENTE no máximo 3 linhas) descrevendo:
 1. O perfil musical do usuário.
 2. Como essa preferência musical se conecta com a visão de mundo dele.
 
 - Seja intuitivo, direto e humano.
+- Escreva um texto direcionado para o usuário (usando "Você" e/ou palavras que direcionem o texto ao usuário)
 - Não cite números ou valores do JSON.
 - Não repita o JSON.
 - Não use linguagem técnica de análise; apenas interpretação natural.
@@ -124,6 +127,7 @@ Com base nesses valores, escreva um texto curto (OBRIGATORIAMENTE no máximo 4 l
         response = await asyncio.to_thread(call)
         raw_output = response["output"]["message"]["content"][0]["text"]
         raw_output = raw_output.replace("```json", "").replace("```", "").strip()
+        print("perfil emocional analisado com sucesso!")
         return raw_output
     except Exception as e:
         print(f"Erro ao chamar Bedrock: {e}")
@@ -131,3 +135,78 @@ Com base nesses valores, escreva um texto curto (OBRIGATORIAMENTE no máximo 4 l
     
 
 
+async def get_analise_musica(EMOCAO: str, LETRA):
+    print("analisando musica...")
+    prompt = f"""
+
+    Instruções:
+Você receberá:
+
+Uma emoção predominante, já identificada por outro modelo.
+
+A letra completa de uma música.
+
+Sua tarefa é:
+
+Identificar qual verso ou estrofe da letra tem maior relação direta com a emoção fornecida.
+
+A resposta deve trazer apenas um trecho (o mais relevante).
+
+Explique brevemente por que esse trecho se conecta com a emoção.
+
+Regras:
+    - Retorne SOMENTE o JSON.
+    - Seja intuitivo, direto e humano.
+    - Faça questão de embelezar a explicação, evidenciando um lado poético.
+
+Formato exato da resposta:
+
+{{
+  "citacao": "<TRECHO DA LETRA>",
+  "explicacao": "<EXPLICAÇÃO CURTA>"
+}}
+
+
+Dados fornecidos:
+Emoção predominante: '{EMOCAO}'
+Letra da música:
+'{LETRA}'
+
+"""
+
+    
+
+    call = partial(
+    aws_bedrock_client.converse,
+    modelId="amazon.nova-lite-v1:0",
+    messages=[{"role": "user", "content": [{"text": prompt}]}]
+)
+
+    try:
+        response = await asyncio.to_thread(call)
+        raw_output = response["output"]["message"]["content"][0]["text"]
+        raw_output = raw_output.replace("```json", "").replace("```", "").strip()
+        print(f"musica de emocao {EMOCAO} analisada com sucesso!")
+        return raw_output
+    except Exception as e:
+        print(f"Erro ao chamar Bedrock: {e}")
+        return {"erro": str(e)}
+    
+
+async def get_media_emocoes(emocoes: list):
+        print("extraindo media de emocoes...")
+        dict_media_emocoes = {}
+       
+        for item in emocoes:
+            for a, b in item.items():
+                if a not in dict_media_emocoes:
+                    dict_media_emocoes[a] = b
+                else:
+                    dict_media_emocoes[a] += b
+                   
+
+        for chave, valor in dict_media_emocoes.items():
+            dict_media_emocoes[chave] = round(valor/len(emocoes), 2)
+
+
+        return dict_media_emocoes
