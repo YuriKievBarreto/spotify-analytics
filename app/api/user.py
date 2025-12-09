@@ -218,6 +218,16 @@ async def get_perfil_musical( user_id: str = Depends(get_current_user_id)):
     faixa_top2 = max(lista_faixas, key=lambda faixa: faixa.emocoes[top2chave_max])
     valor_top2 = faixa_top2.emocoes[top2chave_max]
 
+    if faixa_top2.nome_faixa == faixa_top1.nome_faixa:
+        print("encontrei faixa duplicada")
+        lista_ordenada = sorted(
+            lista_faixas,
+            key=lambda faixa: faixa.emocoes[top2chave_max],
+            reverse=True
+        )
+        faixa_top2 = lista_ordenada[1]  # pega o 2º melhor
+        valor_top2 = faixa_top2.emocoes[top2chave_max]
+
 
     analise_top2 = await get_analise_musica(LETRA=faixa_top2.letra_faixa, EMOCAO=top2chave_max)
     dict_analise_faixa_top2 = json.loads(analise_top2)

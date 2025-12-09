@@ -8,90 +8,14 @@ from app.services.crud.user_crud import ler_usuario
 import math
 from app.core.aws_config import aws_bedrock_client
 import json
+from botocore.exceptions import ClientError
+import time
+
+MODEL_ID = "amazon.nova-lite-v1:0"
+MODEL_ID_2 = "amazon.nova-pro-v1:0"
 
 
 
-async def extrair_emocoes(letra_musica: str):
-        
-    prompt =  f"""
-        Você é um analisador emocional especializado. 
-    Sua tarefa é identificar a intensidade de cada emoção presente na letra da música abaixo.
-
-    Regras:
-    - Retorne SOMENTE o JSON.
-    - Cada emoção deve ser um número entre 0 e 1.
-    - Se a emoção não estiver presente, use 0.
-    - Não adicione comentários, explicações ou texto fora do JSON.
-    - Não altere os nomes das chaves.
-    - A letra pode estar em qualquer idioma, não só português.
-
-    Formato exato de saída:
-    {{
-    "alegria": 0.75,
-    "otimismo": 0.70,
-    "esperanca": 0.65,
-    "introspeccao": 0.20,
-    "paz": 0.50,
-    "amor": 0.20,
-    "tristeza": 0.05,
-    "raiva": 0.03,
-    "medo": 0.02,
-    "nostalgia": 0.10,
-    "melancolia": 0.05,
-    "desilusao_amorosa": 0.03,
-    "desespero": 0.02,
-    "rebeldia": 0.01,
-    "anseio": 0.15,
-    "autoafirmacao": 0.20,
-    "sensualidade: 0.50",
-    "sexual_explicit: 0.20"
-    }}
-
-    observação: Use sensualidade apenas para conteúdo sexual explícito ou muito direto. Letras apenas românticas ou sedutoras NÃO devem receber esse rótulo
-
-    Letra da música:
-    "{letra_musica}"
-
-    """
-
-    call = partial(
-        aws_bedrock_client.converse,
-        modelId="amazon.nova-pro-v1:0", #"amazon.nova-lite-v1:0",
-        messages=[{"role": "user", "content": [{"text": prompt}]}]
-    )
-
-
-    try:
-        response = await asyncio.to_thread(call)
-    except Exception as e:
-        print(f"Erro ao chamar Bedrock: {e}")
-        return {"erro": str(e)}
-    
-    raw_output = response["output"]["message"]["content"][0]["text"]
-    raw_output = raw_output.replace("```json", "").replace("```", "").strip()
-    
-    import json
-
-    try:
-        emotion_data = json.loads(raw_output)
-        return emotion_data
-    except json.JSONDecodeError as e:
-        print("erro ao converter JSON:", e)
-        print("conteúdo retornado pelo Bedrock:")
-        print(raw_output)
-    return None
-
-
-async def extrair_emocoes_em_batch(lista_de_letras: list[str]) -> list[dict]:
-
-    tasks = [
-        extrair_emocoes(letra)
-        for letra in lista_de_letras
-    ]
-
-    resultados = await asyncio.gather(*tasks)
-    
-    return resultados
 
 
 async def get_perfil_emocional(emocoes: dict) -> str:
@@ -210,3 +134,103 @@ async def get_media_emocoes(emocoes: list):
 
 
         return dict_media_emocoes
+
+
+def montar_prompt_batch(lista_de_letras):
+    itens = []
+    for i, letra in enumerate(lista_de_letras):
+        itens.append(f'"letra_{i}": "{letra}"')
+
+    letras_json = "{\n" + ",\n".join(itens) + "\n}"
+
+    return f"""
+Você é um analisador emocional especializado.
+Sua tarefa é identificar a intensidade de cada emoção presente na letra da música abaixo.
+
+Receberá várias letras e deve retornar um ARRAY JSON, onde cada item corresponde à letra na mesma ordem.
+
+Regras:
+- Retorne SOMENTE o JSON.
+- A saída deve ser um ARRAY.
+- Cada item deve conter TODAS as emoções listadas abaixo.
+- Valores entre 0 e 1 (use 0.0 se ausente).
+- Não altere nomes das chaves.
+- Nada fora do JSON.
+
+Formato de cada item:
+{{
+"alegria": 0.0, "otimismo": 0.0, "esperanca": 0.0,
+"introspeccao": 0.0, "paz": 0.0, "amor": 0.0,
+"tristeza": 0.0, "raiva": 0.0, "medo": 0.0,
+"nostalgia": 0.0, "melancolia": 0.0, "desilusao_amorosa": 0.0,
+"desespero": 0.0, "rebeldia": 0.0, "anseio": 0.0,
+"autoafirmacao": 0.0, "sensualidade": 0.0, "sexual_explicit": 0.0
+}}
+
+Letras:
+{letras_json}
+"""
+
+
+async def extrair_emocoes_batch_bedrock(lista_de_letras: list[str], chunk_size=3):
+    resultados_finais = []
+
+    print(f"\n⚙️ Iniciando batch com {len(lista_de_letras)} letras, chunk_size = {chunk_size}")
+
+    for idx, chunk in enumerate(chunk_list(lista_de_letras, chunk_size)):
+        print(f"\n📦 --- Chunk {idx+1} ---")
+        print(f"Contém {len(chunk)} letras")
+
+        # medir tempo de geração do prompt
+        t0 = time.time()
+        prompt = montar_prompt_batch(chunk)
+        t1 = time.time()
+        print(f"⏱️ Tempo para montar prompt: {t1 - t0:.2f}s")
+        print(f"📄 Prompt tem {len(prompt)} caracteres")
+
+        # chamada à API
+        print("🚀 Enviando chunk para o Bedrock...")
+        t2 = time.time()
+
+        call = partial(
+            aws_bedrock_client.converse,
+            modelId=MODEL_ID_2,
+            messages=[{"role": "user", "content": [{"text": prompt}]}]
+        )
+
+        try:
+            response = await asyncio.to_thread(call)
+        except Exception as e:
+            print(f"❌ Erro no chunk {idx+1}: {e}")
+            resultados_finais.extend([None] * len(chunk))
+            continue
+
+        t3 = time.time()
+        print(f"✅ Resposta recebida em {t3 - t2:.2f}s")
+
+        # processamento do retorno
+        raw = response["output"]["message"]["content"][0]["text"]
+        raw = raw.replace("```json", "").replace("```", "").strip()
+
+        print("📥 JSON bruto retornado:")
+        print(raw[:500] + ("..." if len(raw) > 500 else ""))  # para não explodir o terminal
+
+        try:
+            parsed = json.loads(raw)
+            print(f"🟢 JSON válido. Foram retornados {len(parsed)} itens.")
+        except json.JSONDecodeError as e:
+            print("❌ Erro ao converter JSON:", e)
+            parsed = [None] * len(chunk)
+
+        resultados_finais.extend(parsed)
+
+    print("\n🎉 Batch finalizado!")
+    print(f"Total de resultados: {len(resultados_finais)}\n")
+
+    return resultados_finais
+
+
+def chunk_list(lista, tamanho):
+    for i in range(0, len(lista), tamanho):
+        yield lista[i:i + tamanho]
+

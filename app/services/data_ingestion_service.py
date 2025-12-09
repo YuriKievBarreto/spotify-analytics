@@ -20,7 +20,7 @@ from app.services.crud.artista_crud import salvar_artistas_em_batch
 from app.services.crud.faixa_crud import salvar_faixas_em_batch
 from app.services.spotipy_service import get_current_user_details
 from app.services.extracao_de_letras import buscar_letras_em_batch
-from app.services.emotion_extraction_service import extrair_emocoes_em_batch
+from app.services.emotion_extraction_service import extrair_emocoes_batch_bedrock
 
 
 async def refresh_and_get_access_token(db: AsyncSession, user_id: str, refresh_token: str) -> str:
@@ -134,8 +134,8 @@ async def salvar_top_faixas(user_id:str, access_token:str):
 
     async with AsyncSession(async_engine) as db:
      
-        print("puxando top 25 faixas de todos os periodos de tempo")
-        top_faixas = await get_top_faixas(access_token, quantitade=3, time_ranges=["short_term", "medium_term", "long_term"])
+        print("puxando top 10 faixas de todos os periodos de tempo")
+        top_faixas = await get_top_faixas(access_token, quantitade=5, time_ranges=["short_term", "medium_term", "long_term"])
         
         top_faixas_unicas = {}
         tuplas_vistas = set()
@@ -159,6 +159,8 @@ async def salvar_top_faixas(user_id:str, access_token:str):
         letras_musicas = await buscar_letras_em_batch(lista_musicas)
 
         for i, (chave, dados_faixa) in enumerate(top_faixas_unicas.items()):
+            if letras_musicas[i]["letra"] is None:
+               continue
             dados_faixa["letra"] = letras_musicas[i]["letra"]
 
         
@@ -166,7 +168,8 @@ async def salvar_top_faixas(user_id:str, access_token:str):
         print("extraindo emocoes")
         lista_letras = [faixa["letra"] for faixa in top_faixas_unicas.values()]
 
-        lista_emocoes = await extrair_emocoes_em_batch(lista_letras)
+        lista_emocoes = await extrair_emocoes_batch_bedrock(lista_letras, chunk_size=6)
+
 
         for i, (chave, dados_faixa) in enumerate(top_faixas_unicas.items()):
             dados_faixa["emocoes"] = lista_emocoes[i]
