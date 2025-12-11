@@ -250,15 +250,7 @@ async def get_perfil_musical( user_id: str = Depends(get_current_user_id)):
     faixa_top2 = max(lista_faixas, key=lambda faixa: faixa.emocoes[top2chave_max])
     valor_top2 = faixa_top2.emocoes[top2chave_max]
 
-    if faixa_top2.nome_faixa == faixa_top1.nome_faixa:
-        print("encontrei faixa duplicada")
-        lista_ordenada = sorted(
-            lista_faixas,
-            key=lambda faixa: faixa.emocoes[top2chave_max],
-            reverse=True
-        )
-        faixa_top2 = lista_ordenada[1]  # pega o 2º melhor
-        valor_top2 = faixa_top2.emocoes[top2chave_max]
+   
 
 
     analise_top2 = await get_analise_musica(LETRA=faixa_top2.letra_faixa, EMOCAO=top2chave_max)
@@ -268,7 +260,11 @@ async def get_perfil_musical( user_id: str = Depends(get_current_user_id)):
     dict_faixa_top2["emocao_mais_alta"] = valor_top2
     dict_faixa_top2["analise"] = dict_analise_faixa_top2
 
-
+    print(media_top1_chave_max)
+    print(media_top1_valor_max)
+    print("---------------------")
+    print(top2chave_max)
+    print(top2_valor_max)
 
 
     dict_resposta = {

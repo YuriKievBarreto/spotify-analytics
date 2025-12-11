@@ -145,34 +145,53 @@ def montar_prompt_batch(lista_de_letras):
 
     return f"""
 Você é um analisador emocional especializado.
-Sua tarefa é identificar a intensidade de cada emoção presente na letra da música abaixo.
 
-Receberá várias letras e deve retornar um ARRAY JSON, onde cada item corresponde à letra na mesma ordem.
+Sua tarefa é analisar cada letra e identificar a intensidade de cada emoção listada abaixo.
 
-Regras:
-- Retorne SOMENTE o JSON.
-- A saída deve ser um ARRAY.
-- Cada item deve conter TODAS as emoções listadas abaixo.
-- Valores entre 0 e 1 (use 0.0 se ausente).
+IMPORTANTE:
+- O raciocínio deve acontecer INTERNAMENTE.
+- NÃO revele explicações, etapas, análises, divisão por seções ou qualquer texto fora do JSON final.
+- A saída final deve conter APENAS um ARRAY JSON, na mesma ordem das letras recebidas.
+
+Processo interno que você DEVE seguir (sem mostrar):
+1. Leia cada letra inteira.
+2. Resuma internamente a letra.
+3. Identifique os temas principais internamente.
+4. Separe a letra internamente em seções (verso/refrão/ponte).
+5. Avalie emoções SOMENTE quando houver elementos explícitos ou diretamente sugeridos pelo texto.
+6. Evite interpretações subjetivas ou simbólicas.
+7. Gere as pontuações emocionais baseando-se apenas no texto.
+
+REGRAS:
+- A saída deve ser SOMENTE um ARRAY JSON.
+- Não explique nada.
+- Não descreva nada fora do JSON.
+- Não infira nada que não esteja explícito na letra.
+- Não interprete símbolos, metáforas ou contexto cultural.
+- Não adivinhe sentimentos implícitos.
 - Não altere nomes das chaves.
-- Nada fora do JSON.
+- Todos os itens devem conter TODAS as emoções.
+- Valores entre 0.0 e 1.0.
+- Use 0.0 quando a emoção não estiver presente de forma clara.
 
-Formato de cada item:
+FORMATO DE CADA ITEM DO ARRAY:
 {{
-"alegria": 0.0, "otimismo": 0.0, "esperanca": 0.0,
-"introspeccao": 0.0, "paz": 0.0, "amor": 0.0,
-"tristeza": 0.0, "raiva": 0.0, "medo": 0.0,
-"nostalgia": 0.0, "melancolia": 0.0, "desilusao_amorosa": 0.0,
-"desespero": 0.0, "rebeldia": 0.0, "anseio": 0.0,
-"autoafirmacao": 0.0, "sensualidade": 0.0, "sexual_explicit": 0.0
+  "alegria": 0.0, "otimismo": 0.0, "esperanca": 0.0,
+  "introspeccao": 0.0, "paz": 0.0, "amor": 0.0,
+  "tristeza": 0.0, "raiva": 0.0, "medo": 0.0,
+  "nostalgia": 0.0, "melancolia": 0.0, "desilusao_amorosa": 0.0,
+  "desespero": 0.0, "rebeldia": 0.0, "anseio": 0.0,
+  "autoafirmacao": 0.0, "sensualidade": 0.0, "sexual_explicit": 0.0
 }}
 
-Letras:
+LETRAS:
 {letras_json}
+
+Retorne agora SOMENTE o ARRAY JSON.
 """
 
 
-async def extrair_emocoes_batch_bedrock(lista_de_letras: list[str], chunk_size=3):
+async def extrair_emocoes_batch_bedrock(lista_de_letras: list[str], chunk_size=1):
     resultados_finais = []
 
     print(f"\n⚙️ Iniciando batch com {len(lista_de_letras)} letras, chunk_size = {chunk_size}")
@@ -194,7 +213,7 @@ async def extrair_emocoes_batch_bedrock(lista_de_letras: list[str], chunk_size=3
 
         call = partial(
             aws_bedrock_client.converse,
-            modelId=MODEL_ID,
+            modelId=MODEL_ID_2,
             messages=[{"role": "user", "content": [{"text": prompt}]}]
         )
 
