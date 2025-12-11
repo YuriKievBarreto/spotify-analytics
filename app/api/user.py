@@ -8,9 +8,12 @@ from app.core.database import get_session
 from datetime import datetime, timezone
 from app.services.crud.user_crud import ler_usuario
 from app.services.spotipy_service import get_top_faixas, get_top_artistas, get_user_top_genres
+from app.utils.general import contar_elementos
 from app.services.crud.relacionamentos_crud import ler_usuario_top_faixas, ler_usuario_top_artistas
 from app.services.emotion_extraction_service import get_media_emocoes, get_perfil_emocional, get_analise_musica
 from app.models.usuario import Usuario
+from app.services.crud.user_crud import ler_usuario, get_basic_data
+from app.services.crud.relacionamentos_crud import ler_usuario_top_faixas, ler_usuario_top_artistas
 from sqlalchemy import select
 from dataclasses import asdict
 import numpy as np
@@ -61,19 +64,48 @@ async def get_user_id(
 @user_router.get("/get_user_basic_data")
 async def get_user_basic_data(spotify_user_id: str = Depends(get_current_user_id),
      db: AsyncSession = Depends(get_session)):
+    
+    
+    user_db = await ler_usuario(spotify_user_id)
+    print(user_db.status_processamento)
 
-    usuario = await ler_usuario(spotify_user_id)
-    nome_exibicao = usuario.nome_exibicao
-    top_faixas = await get_top_faixas(usuario.access_token, quantitade=1)
-    top_artistas = await get_top_artistas(usuario.access_token, quantitade=1)
-    top_generos = await get_user_top_genres(usuario.access_token, quantidade=50)
+    if user_db.status_processamento == "PROCESSANDO":
+        print("puxando basic data da api do spotify")
+        usuario = await ler_usuario(spotify_user_id)
+        nome_exibicao = usuario.nome_exibicao
+        top_faixa = await get_top_faixas(usuario.access_token, quantitade=1)
+        top_artista = await get_top_artistas(usuario.access_token, quantitade=1)
+        top_generos = await get_user_top_genres(usuario.access_token, quantidade=50)
 
-    return {
-        "nome_exibicao": nome_exibicao,
-        "top_faixas": top_faixas,
-        "top_artistas": top_artistas,
-        "top_generos": top_generos
-    }
+        top_artista = list(top_artista.values())[0]
+        top_faixa = list(top_faixa.values())[0]
+
+
+
+        return {
+            "nome_exibicao": nome_exibicao,
+            "top_faixa": top_faixa,
+            "top_artista": top_artista,
+            "top_generos": top_generos
+
+        }
+       
+
+        
+    else:
+        response_dict = await get_basic_data(spotify_user_id, user_db)
+        return response_dict
+        
+    
+    
+
+    
+
+ 
+
+    
+
+    
 
 
 

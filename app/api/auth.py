@@ -69,6 +69,8 @@ async def spotify_callback(
             access_token
         )
 
+        
+
     
     else:
         print("Usuário já existe — gerando novo JWT")

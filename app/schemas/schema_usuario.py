@@ -8,6 +8,14 @@ class UsuarioSchema(BaseModel):
     nome_exibicao: str
     pais: str
 
+    access_token: str
+    refresh_token: str
+    token_expires_at: datetime 
+
+    ultima_atualizacao: datetime
+    status_processamento: str
+    
+
     top_artistas_rel: List["UsuarioTopArtistaSchema"]
     top_faixas_rel: List["UsuarioTopFaixaSchema"]
 
@@ -24,3 +32,6 @@ class UsuarioCreate(BaseModel):
     access_token: str
     refresh_token: str
     token_expires_at: datetime 
+
+    ultima_atualizacao: datetime
+    status_processamento: str

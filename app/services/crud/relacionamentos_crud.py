@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from typing import Type, List, Dict
 
-async def ler_usuario_top_faixas(id_usuario: str):
+async def ler_usuario_top_faixas(id_usuario: str, quantidade: int=None):
    async with AsyncSession(async_engine) as db:
       print("iniciando busca de relacionamentos")
       stmt = select(UsuarioTopFaixa).where(
@@ -18,13 +18,13 @@ async def ler_usuario_top_faixas(id_usuario: str):
          joinedload(UsuarioTopFaixa.faixa) 
       ).order_by(
         UsuarioTopFaixa.short_time_rank.asc()
-    )
+    ).limit(quantidade)
       
    result =  await db.execute(stmt)
    return result.scalars().all()
 
 
-async def ler_usuario_top_artistas(id_usuario: str):
+async def ler_usuario_top_artistas(id_usuario: str, quantidade:str=None):
    async with AsyncSession(async_engine) as db:
       print("iniciando busca de relacionamentos")
       stmt = select(UsuarioTopArtista).where(
@@ -33,7 +33,7 @@ async def ler_usuario_top_artistas(id_usuario: str):
          joinedload(UsuarioTopArtista.artista) 
       ).order_by(
         UsuarioTopArtista.short_time_rank.asc()
-    )
+    ).limit(quantidade)
       
    result =  await db.execute(stmt)
    return result.scalars().all()

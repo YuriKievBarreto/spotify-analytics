@@ -16,6 +16,8 @@ class Usuario(Base):
     access_token: Mapped[str] = mapped_column(String(512), nullable=False)
     refresh_token: Mapped[str] = mapped_column(String(1024))
     token_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    ultima_atualizacao: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    status_processamento: Mapped[str] = mapped_column(String(512), nullable=True)
 
     top_artistas_rel: Mapped[List["UsuarioTopArtista"]] = relationship(
         back_populates="usuario"

@@ -15,7 +15,7 @@ from sqlalchemy.orm import selectinload, attributes
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 # Importações de CRUD
-from app.services.crud.user_crud import criar_usuario, ler_usuario
+from app.services.crud.user_crud import criar_usuario, ler_usuario, atualizar_status
 from app.services.crud.artista_crud import salvar_artistas_em_batch
 from app.services.crud.faixa_crud import salvar_faixas_em_batch
 from app.services.spotipy_service import get_current_user_details
@@ -60,7 +60,9 @@ async def salvar_dados_iniciais_do_usuario(token_info):
             pais = user_dict["pais"],
             access_token = user_dict["access_token"],
             refresh_token = user_dict["refresh_token"],
-            token_expires_at = user_dict["token_expires_at"]
+            token_expires_at = user_dict["token_expires_at"],
+            ultima_atualizacao = datetime.now().date(),
+            status_processamento = "PROCESSANDO"
         )
 
         
@@ -135,7 +137,7 @@ async def salvar_top_faixas(user_id:str, access_token:str):
     async with AsyncSession(async_engine) as db:
      
         print("puxando top 10 faixas de todos os periodos de tempo")
-        top_faixas = await get_top_faixas(access_token, quantitade=5, time_ranges=["short_term", "medium_term", "long_term"])
+        top_faixas = await get_top_faixas(access_token, quantitade=1, time_ranges=["short_term", "medium_term", "long_term"])
         
         top_faixas_unicas = {}
         tuplas_vistas = set()
@@ -231,7 +233,7 @@ async def salvar_top_artistas(user_id: str, access_token: str):
                 "nome_artista": valor["nome_artista"],
                 "popularidade_artista": valor["popularidade_artista"],
                 "link_imagem": valor["link_imagem"],
-                "generos": valor["generos_artista"]
+                "generos": valor["generos"]
             }
 
             lista_artistas_para_adicionar.append(dict_artista)
@@ -247,6 +249,8 @@ async def salvar_top_artistas(user_id: str, access_token: str):
         await salvar_artistas_em_batch(db, lista_artistas_para_adicionar)
         artistas_ids = list(top_artistas.keys())
         await salvar_relacionamentos_top_artistas(db, user_id, artistas_ids, rank_map)
+
+        await atualizar_status(user_id, "PRONTO")
 
 
     

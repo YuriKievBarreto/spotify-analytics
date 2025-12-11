@@ -194,7 +194,7 @@ async def extrair_emocoes_batch_bedrock(lista_de_letras: list[str], chunk_size=3
 
         call = partial(
             aws_bedrock_client.converse,
-            modelId=MODEL_ID_2,
+            modelId=MODEL_ID,
             messages=[{"role": "user", "content": [{"text": prompt}]}]
         )
 
@@ -213,7 +213,7 @@ async def extrair_emocoes_batch_bedrock(lista_de_letras: list[str], chunk_size=3
         raw = raw.replace("```json", "").replace("```", "").strip()
 
         print("📥 JSON bruto retornado:")
-        print(raw[:500] + ("..." if len(raw) > 500 else ""))  # para não explodir o terminal
+        print(raw[:500] + ("..." if len(raw) > 500 else ""))  
 
         try:
             parsed = json.loads(raw)

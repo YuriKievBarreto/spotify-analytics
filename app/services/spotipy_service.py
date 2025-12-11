@@ -3,7 +3,7 @@ from spotipy import Spotify
 from datetime import datetime, timezone, timedelta
 from collections import Counter
 import asyncio
-
+from app.utils.general import contar_elementos
 
 
 async def autenticar_sp(access_token):
@@ -116,7 +116,7 @@ async def get_top_artistas(access_token: str, quantitade: int = 20, time_ranges:
                     "id_artista": artist_id,
                     "nome_artista": item["name"],
                     "link_imagem": item["images"][1]["url"],
-                    "generos_artista": item["genres"],
+                    "generos": item["genres"],
                     "popularidade_artista": item["popularity"]
                 }
                 
@@ -149,11 +149,9 @@ async def get_user_top_genres(access_token: str, quantidade: int = 50):
     )
     
     
-    for artista in artistas.get("items", []): 
-        for genero in artista.get("genres", []):
-            lista_generos.append(genero)
+    lista_generos = [genero for artista in artistas.get("items", []) for genero in artista.get("genres", [])]
 
-    contagem = Counter(lista_generos)
-    dict_contagem = dict(contagem.most_common()[:6])
+    dict_contagem = await contar_elementos(lista_generos)
 
     return dict_contagem
+

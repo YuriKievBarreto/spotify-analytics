@@ -4,6 +4,8 @@ from sqlalchemy.future import select
 from app.models.usuario import Usuario  
 from datetime import datetime
 from app.core.database import async_engine
+from app.services.crud.relacionamentos_crud import ler_usuario_top_faixas, ler_usuario_top_artistas
+from app.utils.general import contar_elementos
 
 async def criar_usuario(db: AsyncSession, user_data_dict):
 
@@ -69,5 +71,53 @@ async def ler_usuario(user_id:str):
     
         except Exception as e:
             raise e 
+        
 
+
+async def get_basic_data(spotify_user_id: str, user_db):
+    print("usuario encontrado, tentando puxar dados direto do banco de dados")
+    try:
+        nome_exibicao = user_db.nome_exibicao
+
+        response_top_faixa = await ler_usuario_top_faixas(spotify_user_id, quantidade=1)
+        top_faixa = response_top_faixa[0].faixa
+
+        top_artista = await ler_usuario_top_artistas(spotify_user_id, quantidade=1)
+
+        response_top_artistas = await ler_usuario_top_artistas(spotify_user_id, quantidade=20)
+        top_generos = [gen for art in response_top_artistas for gen in art.artista.generos]
+        top_generos = await contar_elementos(top_generos)
+
+
+        return {
+        "nome_exibicao": nome_exibicao,
+        "top_faixa": top_faixa,
+        "top_artista": top_artista[0].artista,
+        "top_generos": top_generos
+    }
+    
+    except Exception as e:
+        print(e)
+        raise e
+      
+
+async def atualizar_status(spotify_user_id: str, status: str):
+    async with AsyncSession(async_engine) as db:
+        print(f"atualizando status do usuario para : {status}")
+
+    consulta = select(Usuario).where(Usuario.id_usuario == spotify_user_id)
+    resultado = await db.execute(consulta)
+    
+    
+    usuario_db = resultado.scalar_one_or_none() 
+
+    if usuario_db:
+        usuario_db.status_processamento = status
+        db.add(usuario_db)
+        await db.commit()
+        
+        return usuario_db
+    else:
+        print(f"Usuário {spotify_user_id} não encontrado.")
+        return None
 

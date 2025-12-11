@@ -174,25 +174,33 @@
 
         const data = await response.json();
         console.log("PRINTANDO DATA")
-        console.log(JSON.stringify(data))
+        console.log(data)
+        
 
         // ===== Música =====
-        const topTrack = Object.values(data.top_faixas)[0];
+        const topTrack = data.top_faixa
+        console.log("PRINTANDO TopTrack")
+        console.log(topTrack)
         document.getElementById("topTrackImg").src = topTrack.link_imagem;
         document.getElementById("topTrackName").textContent = topTrack.nome_faixa;
 
-        const topArtistForTrack = Object.values(data.top_artistas)[0];
+        console.log(topTrack.link_imagem, topTrack.nome_faixa)
+        
+        
+        const topArtistForTrack = data.top_artista;
         document.getElementById("topTrackArtist").textContent = topArtistForTrack.nome_artista;
+        console.log("PRINTANDO TOP ARTISTA")
+        console.log(topArtistForTrack)
 
         // ===== Artista =====
-        const topArtist = Object.values(data.top_artistas)[0];
+        console.log("PRINTANDO artisat")
+        console.log(topArtistForTrack)
+        const topArtist = data.top_artista;
         document.getElementById("topArtistImg").src = topArtist.link_imagem;
-        document.getElementById("topArtistName").textContent =Object.entries(data.top_faixas)[0][1].artista_principal;
-        document.getElementById("topArtistGenre").textContent = "Gênero: " + topArtist.generos_artista[0];
+        document.getElementById("topArtistName").textContent = data.top_faixa.artista_principal;
+        document.getElementById("topArtistGenre").textContent = "Gênero: " + topArtist.generos[0];
 
         
-        console.log("nome: ", Object.entries(data.top_faixas)[0][1].artista_principal)
-        console.log( "imagem: ", (Object.entries(data.top_faixas)[0][1].link_imagem))
 
         document.getElementById("userName").textContent = `Olá, ${data.nome_exibicao}👋` 
 
