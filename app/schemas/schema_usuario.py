@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional, Any
 from datetime import datetime
 
 
@@ -14,6 +14,8 @@ class UsuarioSchema(BaseModel):
 
     ultima_atualizacao: datetime
     status_processamento: str
+
+    perfil_emocional: str
     
 
     top_artistas_rel: List["UsuarioTopArtistaSchema"]
@@ -35,3 +37,5 @@ class UsuarioCreate(BaseModel):
 
     ultima_atualizacao: datetime
     status_processamento: str
+
+    perfil_emocional: Optional[Any] = None

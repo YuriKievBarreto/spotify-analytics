@@ -1,4 +1,4 @@
-from sqlalchemy import  String  , DateTime
+from sqlalchemy import  String  , DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List
 from datetime import datetime
@@ -18,6 +18,7 @@ class Usuario(Base):
     token_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     ultima_atualizacao: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     status_processamento: Mapped[str] = mapped_column(String(512), nullable=True)
+    perfil_emocional: Mapped[str] = mapped_column(JSON, nullable= True)
 
     top_artistas_rel: Mapped[List["UsuarioTopArtista"]] = relationship(
         back_populates="usuario"

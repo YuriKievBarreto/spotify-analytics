@@ -52,6 +52,8 @@ async def salvar_dados_iniciais_do_usuario(token_info):
     async with AsyncSession(async_engine) as db:
 
         user_dict = await get_current_user_details(token_info)
+        print("TESTANDO0:::::::")
+        print(user_dict["id_usuario"])
 
 
         user_create_data = UsuarioCreate(
@@ -153,22 +155,32 @@ async def salvar_top_faixas(user_id:str, access_token:str):
         print("--------------------------")
         lista_musicas = [(faixa["artista_principal"], faixa["nome_faixa"]) 
         for faixa in top_faixas_unicas.values()]
-        
+
+      
         
         
         
         print("extraindo letras de musicas")
         letras_musicas = await buscar_letras_em_batch(lista_musicas)
 
+        print("TAMANHO", len(letras_musicas))
+
         for i, (chave, dados_faixa) in enumerate(top_faixas_unicas.items()):
             if letras_musicas[i]["letra"] is None:
-               continue
-            dados_faixa["letra"] = letras_musicas[i]["letra"]
+               dados_faixa["letra"] = letras_musicas[i]["letra"]
+               
+            else:
+                dados_faixa["letra"] = letras_musicas[i]["letra"]
 
         
         
         print("extraindo emocoes")
-        lista_letras = [faixa["letra"] for faixa in top_faixas_unicas.values()]
+        lista_letras = [
+            faixa["letra"] 
+            for faixa in top_faixas_unicas.values() 
+            if faixa["letra"] is not None
+            ]
+    
 
         lista_emocoes = await extrair_emocoes_batch_bedrock(lista_letras, chunk_size=5)
 

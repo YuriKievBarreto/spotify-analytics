@@ -6,6 +6,8 @@ from datetime import datetime
 from app.core.database import async_engine
 from app.services.crud.relacionamentos_crud import ler_usuario_top_faixas, ler_usuario_top_artistas
 from app.utils.general import contar_elementos
+from sqlalchemy import update
+
 
 async def criar_usuario(db: AsyncSession, user_data_dict):
 
@@ -120,4 +122,24 @@ async def atualizar_status(spotify_user_id: str, status: str):
     else:
         print(f"Usuário {spotify_user_id} não encontrado.")
         return None
+    
 
+
+
+async def atualizar_perfil_emocional(id_usuario: str, json_perfil: dict):
+     async with AsyncSession(async_engine) as db:
+        try:
+            print("atualizando perfil emocional do usuário")
+            stmt = (
+            update(Usuario)
+            .where(Usuario.id_usuario == id_usuario)
+            .values(perfil_emocional=json_perfil)
+        )
+        
+            await db.execute(stmt)
+            await db.commit()
+
+        except Exception as e:
+            print("erro ao tentar atualizar o perfil emocional", e)
+            raise e
+    
