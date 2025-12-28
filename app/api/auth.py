@@ -59,7 +59,7 @@ async def spotify_callback(
 
     # Passo 5: Resposta imediata ao navegador
     response = RedirectResponse(
-        "http://127.0.0.1:8000/static/dashboard.html",
+        "http://3.144.108.219:8000/static/dashboard.html",
         status_code=status.HTTP_302_FOUND
     )
 
