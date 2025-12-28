@@ -136,8 +136,8 @@
 
     // Logout
     const logoutButton = document.getElementById("logoutButton");
-    const logoutUrl = "http://127.0.0.1:8000/api/v1/user/logout";
-    const redirectUrl = "http://127.0.0.1:8000/";
+    const logoutUrl = "http://3.144.108.219:8000/api/v1/user/logout";
+    const redirectUrl = "http://3.144.108.219:8000/";
 
     async function handleLogout() {
       try {
@@ -159,7 +159,7 @@
 
     // ================== CARREGAR DADOS DO USUÁRIO ==================
     (async () => {
-      const url = "http://127.0.0.1:8000/api/v1/user/get_user_basic_data";
+      const url = "http://3.144.108.219:8000/api/v1/user/get_user_basic_data";
 
       const loading = document.getElementById("loadingOverlay");
       loading.classList.remove("hidden"); // mostra loading
