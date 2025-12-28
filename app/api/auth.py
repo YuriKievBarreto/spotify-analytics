@@ -8,6 +8,7 @@ from app.core.security import create_access_token
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.crud.user_crud import ler_usuario
 from app.core.database import get_session
+from app.core.database import async_engine
 from app.api.user import valida_credenciais
 import asyncio
 
@@ -26,60 +27,37 @@ async def login_spotify():
 @auth_router.get("/callback")
 async def spotify_callback(
     request: Request,
-    background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_session)
+    background_tasks: BackgroundTasks
 ):
     code = request.query_params.get("code")
     if not code:
         raise HTTPException(status_code=400, detail="Código de autorização ausente")
 
-   
-    token_info = sp_oauth_manager.get_access_token(code)
+    # Passo 1: Troca o código pelo token (Operação rápida)
+    # Se sp_oauth_manager for síncrono, use asyncio.to_thread para não travar o loop
+    token_info = await asyncio.to_thread(sp_oauth_manager.get_access_token, code)
     user_id = await get_user_id(token_info)
     access_token = token_info["access_token"]
-    print("--------------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------")
-    print("tokende acesso: ", access_token)
-    print("--------------------------------------------------------------------------")
-    print("--------------------------------------------------------------------------")
-   
 
-  
+    # Passo 2: Verifica existência do usuário (Rápido)
     usuario_bd = await ler_usuario(user_id=user_id)
 
     if usuario_bd is None:
-        print("Usuário novo — criando dados iniciais...")
-        
+        print("Usuário novo — Criando registro mínimo...")
+        # Salva apenas o básico necessário para o login não falhar
         await salvar_dados_iniciais_do_usuario(token_info)
-
-        session_token = create_access_token(subject=user_id)
-
-        # salva top faixas de forma assíncrona
-        background_tasks.add_task(
-            salvar_top_faixas,
-            user_id,
-            access_token
-        )
-
-        # salvar top artistas
-
-        background_tasks.add_task(
-            salvar_top_artistas,
-            user_id,
-            access_token
-        )
-
         
-
-    
+        # Passo 3: Workflow pesado em background (Não trava o return)
+        background_tasks.add_task(workflow_ingestao_completa, user_id, access_token)
     else:
-        print("Usuário já existe — gerando novo JWT")
-        session_token = create_access_token(subject=usuario_bd.id_usuario)
+        print("Usuário já existe — Atualizando credenciais em background")
+        # Também em background para o login ser instantâneo
+        background_tasks.add_task(valida_credenciais, user_id) 
 
-        print("Validando credenciais do usuário...")
-        await valida_credenciais(usuario_bd.id_usuario, db)
+    # Passo 4: Gera o token de sessão da sua aplicação
+    session_token = create_access_token(subject=user_id)
 
-  
+    # Passo 5: Resposta imediata ao navegador
     response = RedirectResponse(
         "http://127.0.0.1:8000/static/dashboard.html",
         status_code=status.HTTP_302_FOUND
@@ -89,7 +67,7 @@ async def spotify_callback(
         key="session_token",
         value=session_token,
         httponly=True,
-        secure=False,  # Localhost
+        secure=False,
         samesite="Lax",
         max_age=43200 * 60,
         path="/"
@@ -111,5 +89,14 @@ async def get_user_id(token_info):
     
     return user_id
 
+
+async def workflow_ingestao_completa(user_id, access_token):
+    async with AsyncSession(async_engine) as session:
+        try:
+            await salvar_top_faixas(user_id, access_token)
+            await salvar_top_artistas(user_id, access_token)
+        except Exception as e:
+            await session.rollback()
+            print(f"Erro no processamento: {e}")
 
 

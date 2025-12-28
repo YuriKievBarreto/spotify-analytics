@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException, status
 from starlette.responses import  JSONResponse
 from app.core.dependencies import get_current_user_id
 from app.services.data_ingestion_service import refresh_and_get_access_token
@@ -12,6 +12,9 @@ from app.services.crud.relacionamentos_crud import ler_usuario_top_faixas, ler_u
 from app.services.emotion_extraction_service import get_media_emocoes, get_perfil_emocional, get_analise_musica
 from app.services.crud.user_crud import ler_usuario, get_basic_data, atualizar_perfil_emocional
 from app.services.crud.relacionamentos_crud import ler_usuario_top_faixas, ler_usuario_top_artistas
+import asyncio
+import json
+
 
 import numpy as np
 import json
@@ -58,41 +61,52 @@ async def get_user_id(
     return spotify_user_id
 
 
+import asyncio
+from fastapi import Depends, HTTPException
+
 @user_router.get("/get_user_basic_data")
-async def get_user_basic_data(spotify_user_id: str = Depends(get_current_user_id),
-     db: AsyncSession = Depends(get_session)):
-    
-    
+async def get_user_basic_data(
+    spotify_user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_session)
+):
+   
     user_db = await ler_usuario(spotify_user_id)
-
-    if user_db.status_processamento == "PROCESSANDO":
-        print("puxando basic data da api do spotify")
-        usuario = await ler_usuario(spotify_user_id)
-        nome_exibicao = usuario.nome_exibicao
-        top_faixa = await get_top_faixas(usuario.access_token, quantitade=1)
-        top_artista = await get_top_artistas(usuario.access_token, quantitade=1)
-        top_generos = await get_user_top_genres(usuario.access_token, quantidade=50)
-
-        top_artista = list(top_artista.values())[0]
-        top_faixa = list(top_faixa.values())[0]
-
-
-
-        return {
-            "nome_exibicao": nome_exibicao,
-            "top_faixa": top_faixa,
-            "top_artista": top_artista,
-            "top_generos": top_generos
-
-        }
-       
-
-        
-    else:
-        response_dict = await get_basic_data(spotify_user_id, user_db)
-        return response_dict
-        
     
+    if not user_db:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    
+    if user_db.status_processamento == "PROCESSANDO":
+        print("Puxando basic data direto da API do Spotify (Real-time Fallback)")
+        
+        try:
+            
+            tarefas = [
+                get_top_faixas(user_db.access_token, quantitade=1),
+                get_top_artistas(user_db.access_token, quantitade=1),
+                get_user_top_genres(user_db.access_token, quantidade=50)
+            ]
+            
+            res_faixas, res_artistas, top_generos = await asyncio.gather(*tarefas)
+
+            
+            top_faixa = list(res_faixas.values())[0] if res_faixas else None
+            top_artista = list(res_artistas.values())[0] if res_artistas else None
+
+            return {
+                "nome_exibicao": user_db.nome_exibicao,
+                "top_faixa": top_faixa,
+                "top_artista": top_artista,
+                "top_generos": top_generos
+            }
+        except Exception as e:
+            print(f"Erro ao buscar dados no Spotify: {e}")
+            raise HTTPException(status_code=502, detail="Erro ao buscar dados no Spotify")
+
+  
+    else:
+        print("Puxando dados otimizados do Banco de Dados")
+        return await get_basic_data(spotify_user_id, user_db)
     
 
 
@@ -114,41 +128,37 @@ async def valida_credenciais(spotify_user_id: str, db: AsyncSession):
     print("token não expirado")
 
 
-
 @user_router.get("/top-musicas")
-async def user_top_musicas( user_id: str = Depends(get_current_user_id)):
-
-    relacoinamentos = await ler_usuario_top_faixas(user_id)
+async def user_top_musicas(user_id: str = Depends(get_current_user_id)):
     
-
-    lista_emocoes = [rel.faixa.emocoes for rel in relacoinamentos]
-    lista_faixas = np.array([rel.faixa.duracao_ms for rel in relacoinamentos])
-    popularidade_media =  np.array([rel.faixa.popularidade for rel in relacoinamentos])
-    pop_media = int(np.round(popularidade_media.mean(), 0))
+    relacionamentos = await ler_usuario_top_faixas(user_id)
     
+    if not relacionamentos:
+        raise HTTPException(status_code=404, detail="Nenhuma música encontrada para este usuário.")
 
- 
+  
+    lista_emocoes = [rel.faixa.emocoes for rel in relacionamentos]
+    duracoes = np.array([rel.faixa.duracao_ms for rel in relacionamentos])
+    popularidades = np.array([rel.faixa.popularidade for rel in relacionamentos])
 
+    
     df_emocoes = pd.DataFrame(lista_emocoes)
-    df_emocoes.describe()
-    df_emocoes.info()
-    matriz_emocoes = df_emocoes.values
-    resultado_np = np.mean(matriz_emocoes, axis=0)
-    resultado_np = np.round(resultado_np, 2)
-   
-
-
-
-    dict_resposta = {
-    "sentimento_predominante": str(df_emocoes.columns[resultado_np.argmax()]),
-    "pontuacao_sentimento_predominante": float(resultado_np.max()),
-    "duracao_media_ms": int(np.round(lista_faixas.mean(), 0)),
-    "faixas": [converter_faixa_e_relacionamento_para_dict(rel) for rel in relacoinamentos],
-    "popularidade_media": float(pop_media)
-}
-                    
     
-   
+  
+    medias_series = df_emocoes.mean().round(2)
+    
+  
+    sentimento_predominante = medias_series.idxmax()
+    pontuacao_predominante = medias_series.max()
+
+    
+    dict_resposta = {
+        "sentimento_predominante": str(sentimento_predominante),
+        "pontuacao_sentimento_predominante": float(pontuacao_predominante),
+        "duracao_media_ms": int(np.round(duracoes.mean(), 0)),
+        "popularidade_media": float(np.round(popularidades.mean(), 0)),
+        "faixas": [converter_faixa_e_relacionamento_para_dict(rel) for rel in relacionamentos]
+    }
 
     return dict_resposta
 
@@ -194,87 +204,69 @@ def converter_artista_e_relacionamento_para_dict(rel):
     }
 
 
-@user_router.get("/perfil-musical")
-async def get_perfil_musical( user_id: str = Depends(get_current_user_id)):
 
+@user_router.get("/perfil-musical")
+async def get_perfil_musical(user_id: str = Depends(get_current_user_id)):
     usuario_banco = await ler_usuario(user_id)
-    if usuario_banco.perfil_emocional:
-        print(type(usuario_banco.perfil_emocional))
-        print(usuario_banco.perfil_emocional)
+    
+    
+    if usuario_banco and usuario_banco.perfil_emocional:
         return usuario_banco.perfil_emocional
 
+  
+    usuario_top_faixas = await ler_usuario_top_faixas(user_id)
+    if not usuario_top_faixas:
+        raise HTTPException(status_code=404, detail="Dados musicais ainda não processados.")
 
-    else:
-        usuario_top_faixas = await ler_usuario_top_faixas(user_id)
-        lista_emocoes = [rel.faixa.emocoes for rel in usuario_top_faixas]
-        lista_faixas = [rel.faixa for rel in usuario_top_faixas]
+    lista_emocoes = [rel.faixa.emocoes for rel in usuario_top_faixas]
+    lista_faixas = [rel.faixa for rel in usuario_top_faixas]
 
-
-        dict_media_emocoes = await get_media_emocoes(lista_emocoes)
-        copia_media_emocoes = dict_media_emocoes.copy()
-
-
-        texto_perfil_emocional = await get_perfil_emocional(dict_media_emocoes)
-
-        media_top1_chave_max = max(copia_media_emocoes, key=copia_media_emocoes.get)
-        media_top1_valor_max = copia_media_emocoes[media_top1_chave_max]
-
-        del copia_media_emocoes[media_top1_chave_max]
-
-        top2chave_max = max(copia_media_emocoes, key=copia_media_emocoes.get)
-        top2_valor_max = copia_media_emocoes[top2chave_max]
-
-
-        faixa_top1 = max(lista_faixas, key=lambda faixa: faixa.emocoes[media_top1_chave_max])
-        valor_top1 = faixa_top1.emocoes[media_top1_chave_max]
-
-
-
-        analise_top1 = await get_analise_musica(LETRA=faixa_top1.letra_faixa, EMOCAO=media_top1_chave_max)
-        dict_analise_faixa_top1 = json.loads(analise_top1)
-
-
-
-        dict_faixa_top1 = to_dict(faixa_top1)
-        del dict_faixa_top1["emocoes"]
-        dict_faixa_top1["emocao_mais_alta"] = valor_top1
-        dict_faixa_top1["analise"] = dict_analise_faixa_top1
-
-        faixa_top2 = max(lista_faixas, key=lambda faixa: faixa.emocoes[top2chave_max])
-        valor_top2 = faixa_top2.emocoes[top2chave_max]
-
+    dict_media_emocoes = await get_media_emocoes(lista_emocoes)
     
-
-
-        analise_top2 = await get_analise_musica(LETRA=faixa_top2.letra_faixa, EMOCAO=top2chave_max)
-        dict_analise_faixa_top2 = json.loads(analise_top2)
-        dict_faixa_top2 = to_dict(faixa_top2)
-        del dict_faixa_top2["emocoes"]
-        dict_faixa_top2["emocao_mais_alta"] = valor_top2
-        dict_faixa_top2["analise"] = dict_analise_faixa_top2
-
+    copia_media = dict_media_emocoes.copy()
+    top1_nome = max(copia_media, key=copia_media.get)
+    top1_intensidade = copia_media.pop(top1_nome)
     
+    top2_nome = max(copia_media, key=copia_media.get)
+    top2_intensidade = copia_media[top2_nome]
 
-        dict_resposta = {
-        "top1_sentimento": {
-            "nome": media_top1_chave_max,
-            "intensidade": media_top1_valor_max,
-            "faixa": dict_faixa_top1
-        },
-        "top2_sentimento": {
-            "nome": top2chave_max,
-            "intensidade": top2_valor_max,
-            "faixa": dict_faixa_top2
-        },
-        "texto_perfil_emocional": texto_perfil_emocional
-        }
+  
+    faixa_top1 = max(lista_faixas, key=lambda f: f.emocoes.get(top1_nome, 0))
+    faixa_top2 = max(lista_faixas, key=lambda f: f.emocoes.get(top2_nome, 0))
 
 
-        print("atualizando perifl emocional no banco de dados")
-        await atualizar_perfil_emocional(user_id, dict_resposta)
+    tarefas_ia = [
+        get_perfil_emocional(dict_media_emocoes),
+        get_analise_musica(LETRA=faixa_top1.letra_faixa, EMOCAO=top1_nome),
+        get_analise_musica(LETRA=faixa_top2.letra_faixa, EMOCAO=top2_nome)
+    ]
+    
+    texto_perfil, analise_raw1, analise_raw2 = await asyncio.gather(*tarefas_ia)
 
+   
+    dict_faixa1 = to_dict(faixa_top1)
+    dict_faixa1.update({
+        "emocao_mais_alta": faixa_top1.emocoes.get(top1_nome),
+        "analise": json.loads(analise_raw1)
+    })
+    dict_faixa1.pop("emocoes", None)
 
-        return dict_resposta
+    dict_faixa2 = to_dict(faixa_top2)
+    dict_faixa2.update({
+        "emocao_mais_alta": faixa_top2.emocoes.get(top2_nome),
+        "analise": json.loads(analise_raw2)
+    })
+    dict_faixa2.pop("emocoes", None)
+
+    dict_resposta = {
+        "top1_sentimento": {"nome": top1_nome, "intensidade": top1_intensidade, "faixa": dict_faixa1},
+        "top2_sentimento": {"nome": top2_nome, "intensidade": top2_intensidade, "faixa": dict_faixa2},
+        "texto_perfil_emocional": texto_perfil
+    }
+
+  
+    await atualizar_perfil_emocional(user_id, dict_resposta)
+    return dict_resposta
 
     
 

@@ -7,7 +7,7 @@ class Base(DeclarativeBase):
     pass
 
 
-rodando_em_conteiner = False
+rodando_em_conteiner = True
 
 if rodando_em_conteiner:
     DATABASE_URL = "postgresql+asyncpg://yuri:yuri@db_spotify_analytics:5432/db_spotify_analytics"
@@ -53,12 +53,12 @@ async def init_db():
             await conn.run_sync(Base.metadata.create_all)
             print("conexao bem sucedida")
 
-            # ⭐️ 1. EXECUTAR A FUNÇÃO SÍNCRONA (Passando a conexão) ⭐️
+            
             db_structure = await conn.run_sync(get_db_structure)
             
             print("\n--- ESTRUTURA ATUAL DO BANCO DE DADOS ---")
             
-            # 2. Imprimir os resultados (agora que estão no formato Python)
+            
             table_count = 0
             for table_name, column_names in db_structure.items():
                 print(f"[{table_name.upper()}] ({len(column_names)} colunas):")

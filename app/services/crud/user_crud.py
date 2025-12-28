@@ -7,6 +7,8 @@ from app.core.database import async_engine
 from app.services.crud.relacionamentos_crud import ler_usuario_top_faixas, ler_usuario_top_artistas
 from app.utils.general import contar_elementos
 from sqlalchemy import update
+from sqlalchemy.exc import SQLAlchemyError
+import asyncio
 
 
 async def criar_usuario(db: AsyncSession, user_data_dict):
@@ -77,52 +79,64 @@ async def ler_usuario(user_id:str):
 
 
 async def get_basic_data(spotify_user_id: str, user_db):
-    print("usuario encontrado, tentando puxar dados direto do banco de dados")
+    print(f"Buscando insights para o usuário: {spotify_user_id}")
     try:
-        nome_exibicao = user_db.nome_exibicao
+        tarefas = [
+            ler_usuario_top_faixas(spotify_user_id, quantidade=1),
+            ler_usuario_top_artistas(spotify_user_id, quantidade=1),
+            ler_usuario_top_artistas(spotify_user_id, quantidade=20)
+        ]
+        
+        
+        res_faixa_1, res_artista_1, res_artistas_20 = await asyncio.gather(*tarefas)
 
-        response_top_faixa = await ler_usuario_top_faixas(spotify_user_id, quantidade=1)
-        top_faixa = response_top_faixa[0].faixa
+        top_faixa = res_faixa_1[0].faixa if res_faixa_1 else None
+        top_artista = res_artista_1[0].artista if res_artista_1 else None
 
-        top_artista = await ler_usuario_top_artistas(spotify_user_id, quantidade=1)
-
-        response_top_artistas = await ler_usuario_top_artistas(spotify_user_id, quantidade=20)
-        top_generos = [gen for art in response_top_artistas for gen in art.artista.generos]
-        top_generos = await contar_elementos(top_generos)
-
+        
+        top_generos = []
+        if res_artistas_20:
+            generos_brutos = [gen for art in res_artistas_20 for gen in art.artista.generos]
+            top_generos = await contar_elementos(generos_brutos)
 
         return {
-        "nome_exibicao": nome_exibicao,
-        "top_faixa": top_faixa,
-        "top_artista": top_artista[0].artista,
-        "top_generos": top_generos
-    }
+            "nome_exibicao": user_db.nome_exibicao,
+            "top_faixa": top_faixa,
+            "top_artista": top_artista,
+            "top_generos": top_generos
+        }
     
     except Exception as e:
-        print(e)
+        print(f"Erro ao compilar dados básicos: {e}")
         raise e
       
 
 async def atualizar_status(spotify_user_id: str, status: str):
     async with AsyncSession(async_engine) as db:
-        print(f"atualizando status do usuario para : {status}")
+        print(f"tentanto atualizar  status do usuario para : {status}")
 
-    consulta = select(Usuario).where(Usuario.id_usuario == spotify_user_id)
-    resultado = await db.execute(consulta)
-    
-    
-    usuario_db = resultado.scalar_one_or_none() 
-
-    if usuario_db:
-        usuario_db.status_processamento = status
-        db.add(usuario_db)
-        await db.commit()
+        try:
+            consulta = select(Usuario).where(Usuario.id_usuario == spotify_user_id)
+            resultado = await db.execute(consulta)
         
-        return usuario_db
-    else:
-        print(f"Usuário {spotify_user_id} não encontrado.")
-        return None
-    
+        
+            usuario_db = resultado.scalar_one_or_none() 
+
+            if usuario_db:
+                usuario_db.status_processamento = status
+                db.add(usuario_db)
+                await db.commit()
+                
+                return usuario_db
+            else:
+                print(f"Usuário {spotify_user_id} não encontrado.")
+                return None
+            
+        except SQLAlchemyError as e:
+            await db.rollback()
+            print(f"Erro ao atualizar status: {e}")
+            raise e
+        
 
 
 
@@ -139,7 +153,14 @@ async def atualizar_perfil_emocional(id_usuario: str, json_perfil: dict):
             await db.execute(stmt)
             await db.commit()
 
+        except SQLAlchemyError as e:
+            await db.rollback()
+            print(f"Erro de banco de dados ao atualizar perfil: {e}")
+          
+            raise ValueError("Falha técnica ao salvar análise emocional no banco.")
+            
         except Exception as e:
-            print("erro ao tentar atualizar o perfil emocional", e)
+            await db.rollback()
+            print(f"Erro inesperado: {e}")
             raise e
     

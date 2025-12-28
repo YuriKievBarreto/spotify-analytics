@@ -37,16 +37,20 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[""
-    "   http://localhost:5500",  
+    allow_origins=[
+        "http://localhost:5500",    # Live Server (comum no VS Code)
         "http://127.0.0.1:5500",
-        "http://127.0.0.1:8000"],                     
-    allow_credentials=True,
-    allow_methods=["*"],                        
+        "http://localhost:8000",    # Seu front rodando no Docker/Local
+        "http://127.0.0.1:8000",
+        "https://yurikievbarreto.github.io", # URL do seu projeto no GitHub Pages
+    ],
+    allow_credentials=True,         # ESSENCIAL para cookies/session_token
+    allow_methods=["*"],
     allow_headers=["*"],
-                            
 )
 
 app.include_router(mainRouter)
